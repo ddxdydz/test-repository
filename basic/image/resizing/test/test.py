@@ -1,18 +1,20 @@
+from pathlib import Path
 from time import time
 
 from PIL import Image
 
 from basic.image.resizing.ImageScaler import ImageScaler, ResizeMethod
 
-TEMP_PATH = r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\resizing\temp"
-PATH = r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\data\v10.png"
-IMG_TYPE = PATH[PATH.rfind("."):]
+BASE_DIR = Path(__file__).parent.parent.parent
+TEMP_PATH = BASE_DIR / "resizing" / "test" / "temp"
+DATA_PATH = BASE_DIR / "data" / "v10.png"
+IMG_TYPE = DATA_PATH.name[DATA_PATH.name.rfind("."):]
 ITERATION_COUNT = 20
 SCALE = 0.7
 
 
 def test(resizer, enable_print=True, i_count=ITERATION_COUNT):
-    input_image = Image.open(PATH)
+    input_image = Image.open(DATA_PATH)
 
     total_resize_time = 0
     total_desize_time = 0
@@ -39,15 +41,15 @@ def test_resizer_methods(resizer):
                ResizeMethod.BICUBIC, ResizeMethod.LANCZOS]
     for i in range(len(methods)):
         resizer.method = methods[i]
-        test(resizer).save(f"{TEMP_PATH}/{i + 1} {resizer.method.name}{IMG_TYPE}")
+        test(resizer).save(f"{TEMP_PATH}\\{i + 1} {resizer.method.name}{IMG_TYPE}")
 
 
 if __name__ == "__main__":
-    original_image = Image.open(PATH)
+    original_image = Image.open(DATA_PATH)
     scale = 0.7
 
     scaler = ImageScaler(scale)
     test_resizer_methods(scaler)
 
-    original_image.save(f"{TEMP_PATH}/0{IMG_TYPE}")
+    original_image.save(f"{TEMP_PATH}\\0{IMG_TYPE}")
     print(scaler.get_weight_loss_percent())
