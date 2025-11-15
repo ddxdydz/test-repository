@@ -2,6 +2,7 @@ from time import time
 
 from PIL import Image
 
+from basic.image.resizing.ImageScaler import ImageScaler
 from basic.image.resizing.PILResizer import PILResizer
 from basic.image.resizing.support.ImageResizer import ImageResizer
 from basic.image.resizing.support.ResizeMethod import ResizeMethod
@@ -11,7 +12,7 @@ from basic.image.resizing.support.ResizeTask import ResizeTask
 TEMP_PATH = r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\resizing\test\temp"
 PATH = r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\data\v10.png"
 IMG_TYPE = PATH[PATH.rfind("."):]
-ITERATION_COUNT = 5
+ITERATION_COUNT = 20
 SCALE = 0.7
 
 
@@ -59,6 +60,7 @@ if __name__ == "__main__":
     resizer = StaticPILResizer(original_image.size, scale=scale)
     test_resizer_methods(resizer)
     test_resizer_methods(PILResizer(ResizeTask(scale=scale)))
+    test_resizer_methods(ImageScaler(scale))
 
     original_image.save(f"{TEMP_PATH}/0{IMG_TYPE}")
     target_size = resizer.target_size
