@@ -5,8 +5,8 @@ class ResizeTask:
     """Класс для описания задачи изменения размера"""
 
     def __init__(self,
-                 size: Optional[Tuple[int, int]] = None,
                  scale: Optional[float] = None,
+                 size: Optional[Tuple[int, int]] = None,
                  max_size: Optional[Tuple[int, int]] = None,
                  width: Optional[int] = None,
                  height: Optional[int] = None):
