@@ -1,7 +1,15 @@
 from enum import Enum
+
 from PIL import Image
 
-from basic.image.resizing.support.ResizeMethod import ResizeMethod
+
+class ResizeMethod(Enum):
+    """Перечисление методов изменения размера"""
+    NEAREST = "nearest"
+    BILINEAR = "bilinear"
+    BICUBIC = "bicubic"
+    LANCZOS = "lanczos"
+    AREA = "area"
 
 
 class ImageScaler:
