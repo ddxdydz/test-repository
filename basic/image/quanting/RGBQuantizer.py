@@ -14,7 +14,7 @@ class RGBQuantizer(Quantizer):
     def quantize(self, image: np.ndarray) -> np.ndarray:
         return cv2.LUT(image, self._quant_lut)
 
-    def dequantize(self, image: np.ndarray) -> np.ndarray:
+    def dequantize(self, quantized_image: np.ndarray) -> np.ndarray:
         return cv2.LUT(image, self._dequant_lut)
 
     def pack_quantized(self, quantized_image: np.ndarray) -> bytes:
@@ -62,6 +62,7 @@ if __name__ == "__main__":
           f"dequantize_time({dequantize_time:.4f}) + " +
           f"unpacking_time({unpacking_time:.4f})", sep="\t")
     print(len(packed_quantized) // 1024, "KB")
+
     Image.fromarray(quantizer.dequantize(quantizer.unpack_quantized(packed_quantized, width, height))).show()
 
 """

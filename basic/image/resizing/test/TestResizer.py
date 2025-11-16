@@ -16,14 +16,16 @@ class TestResizer:
 
     def __init__(self, resizer: ImageResizer, img_path: Path, iteration_count: int = 20):
         self.img_type = img_path.name[img_path.name.rfind("."):]
+        Image.open(img_path).save(f"{TestResizer.TEMP_PATH}\\0{self.img_type}")
+
         self.iteration_count = iteration_count
         self.original_image = np.array(Image.open(img_path), dtype=np.uint8)
-        Image.open(img_path).save(f"{TestResizer.TEMP_PATH}\\0{self.img_type}")
         self.resizer = resizer
         self.resizer.reset_original_size((self.original_image.shape[1], self.original_image.shape[0]))
 
     def test_method(self, method: ResizeMethod, enable_print=True):
         self.resizer.reset_method(method)
+
         total_resize_time = 0
         total_desize_time = 0
         desized_img = None

@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 import cv2
 import numpy as np
 
-from basic.image.IMGArray import IMGArray
-
 
 class Quantizer(ABC):
     """Абстрактный базовый класс для квантователей"""
@@ -40,19 +38,19 @@ class Quantizer(ABC):
         return int((quant * 255) / (self.COLORS - 1))
 
     @abstractmethod
-    def quantize(self, image: IMGArray) -> IMGArray:
+    def quantize(self, image: np.ndarray) -> np.ndarray:
         pass
 
     @abstractmethod
-    def dequantize(self, image: IMGArray) -> IMGArray:
+    def dequantize(self, quantized_image: np.ndarray) -> np.ndarray:
         pass
 
     @abstractmethod
-    def pack_quantized(self, quantized_image: IMGArray) -> bytes:
+    def pack_quantized(self, quantized_image: np.ndarray) -> bytes:
         pass
 
     @abstractmethod
-    def unpack_quantized(self, data: bytes, image_width: int, image_height: int) -> IMGArray:
+    def unpack_quantized(self, data: bytes, image_width: int, image_height: int) -> np.ndarray:
         pass
 
     def __str__(self) -> str:
