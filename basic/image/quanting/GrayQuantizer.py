@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from basic.image.IMGArray import IMGArray
 from basic.image.quanting.ABC_Quantizer import Quantizer
 from basic.image.quanting.tools.pack_image import pack_image
 from basic.image.quanting.tools.unpack_image import unpack_image
@@ -11,11 +12,11 @@ class GrayQuantizer(Quantizer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def quantize(self, image: np.ndarray) -> np.ndarray:
-        return cv2.LUT(cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), self._quant_lut)
+    def quantize(self, image: IMGArray) -> np.ndarray:
+        return cv2.LUT(cv2.cvtColor(image.array, cv2.COLOR_RGB2GRAY), self._quant_lut)
 
-    def dequantize(self, image: np.ndarray) -> np.ndarray:
-        return cv2.cvtColor(cv2.LUT(image, self._dequant_lut), cv2.COLOR_GRAY2RGB)
+    def dequantize(self, quantized_image: np.ndarray) -> IMGArray:
+        return IMGArray(numpy_array=cv2.cvtColor(cv2.LUT(quantized_image, self._dequant_lut), cv2.COLOR_GRAY2RGB))
 
     def pack_quantized(self, quantized_image: np.ndarray) -> bytes:
         return pack_image(quantized_image.flatten(), self.bits_per_color, quantized_image.size)
@@ -25,10 +26,10 @@ class GrayQuantizer(Quantizer):
 
 
 if __name__ == "__main__":
-    original_imgarray = np.array(Image.open(r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\data\v10.png"))
+    original_img = IMGArray(Image.open(r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\data\v10.png"))
     quantizer = GrayQuantizer(colors=4)
     iterations = 1000
-    height, width, _ = original_imgarray.shape
+    height, width, _ = original_img.shape
 
     from time import time
 
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     total_packing_time = 0
     for _ in range(iterations):
         start_time = time()
-        quantized = quantizer.quantize(original_imgarray)
+        quantized = quantizer.quantize(original_img)
         total_quantize_time += time() - start_time
         start_time = time()
         quantizer.pack_quantized(quantized)
@@ -48,7 +49,7 @@ if __name__ == "__main__":
 
     total_dequantize_time = 0
     total_unpacking_time = 0
-    packed_quantized = quantizer.pack_quantized(quantizer.quantize(original_imgarray))
+    packed_quantized = quantizer.pack_quantized(quantizer.quantize(original_img))
     for _ in range(iterations):
         start_time = time()
         unpacked = quantizer.unpack_quantized(packed_quantized, width, height)
@@ -63,7 +64,7 @@ if __name__ == "__main__":
           f"unpacking_time({unpacking_time:.4f})", sep="\t")
 
     print(len(packed_quantized) // 1024, "KB")
-    Image.fromarray(quantizer.dequantize(quantizer.unpack_quantized(packed_quantized, width, height))).show()
+    quantizer.dequantize(quantizer.unpack_quantized(packed_quantized, width, height)).show()
 
 """
 v4

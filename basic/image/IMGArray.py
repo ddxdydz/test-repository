@@ -66,6 +66,9 @@ class IMGArray:
         """Возвращает изображение в формате PIL.Image."""
         return Image.fromarray(self.array)  # Возвращаем копию для безопасности
 
+    def show(self):
+        self.get_pil_image().show()
+
     def save(self, file_path: Union[Path], **kwargs) -> None:
         """
         Сохраняет изображение в файл.
