@@ -1,3 +1,4 @@
+import cv2
 from PIL import Image
 import numpy as np
 
@@ -7,33 +8,26 @@ from basic.image.quanting.GrayscaleQuantizer import GrayscaleQuantizer
 class GrayscaleQuantizerBytes(GrayscaleQuantizer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Предвычисляем LUT для максимальной скорости
-        self._quant_lut = np.array([self.value_to_quant(i) for i in range(256)], dtype=np.uint8)
+        # Создаем 1D LUT для OpenCV
+        self._quant_lut_1d = np.array([self.value_to_quant(i) for i in range(256)], dtype=np.uint8)
+
+        # Настраиваем OpenCV для максимальной производительности
+        cv2.setNumThreads(0)  # Использовать все ядра
+        cv2.useOptimized()  # Включить SIMD оптимизации
+
         self._dequant_lut = np.array([self.quant_to_value(i) for i in range(self.COLORS)], dtype=np.uint8)
 
     def quantize_to_bytes(self, img: Image) -> bytes:
+        arr = np.array(img)
         from time import time
-        if img.mode != 'RGB':
-            img = img.convert('RGB')
-
-        start = time()
-        arr = np.array(img, dtype=np.uint8)
-        width, height = img.size
-        pixels_count = width * height
-        print("arr", time() - start)
-
-        # Супербыстрое вычисление яркости и квантование через LUT
-        start = time()
-        brightness = np.dot(arr, [0.299, 0.587, 0.114]).astype(np.uint8)
-        print("brightness", time() - start)
-        start = time()
-        quantized = self._quant_lut[brightness.flatten()]
-        print("quantized", time() - start)
-
-        bits_per_color = (self.COLORS - 1).bit_length()
-
-        # Оптимизированная упаковка через сдвиги
-        return self._pack_bits_shift(quantized, bits_per_color, pixels_count)
+        t = time()
+        gray = cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY)
+        print(time() - t)
+        t = time()
+        quantized = cv2.LUT(gray, self._quant_lut_1d).flatten()
+        print(time() - t)
+        input()
+        return self._pack_bits_shift(quantized, (self.COLORS - 1).bit_length(), img.width * img.height)
 
     def _pack_bits_shift(self, data: np.ndarray, bits_per_color: int, pixels_count: int) -> bytes:
         """Упаковка через сдвиги - очень быстро для малых bits_per_color"""
@@ -143,24 +137,55 @@ class GrayscaleQuantizerBytes(GrayscaleQuantizer):
 
 
 if __name__ == "__main__":
-    input_image = Image.open(r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\data\v4.png")
+    input_image = Image.open(r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\data\v10.png")
 
     quant = GrayscaleQuantizerBytes(colors=4)
+    iterations = 1000
 
     from time import time
 
-    # start_time = time()
+    total_quantize_time = 0
+    for _ in range(iterations):
+        start_time = time()
+        quant.quantize_to_bytes(input_image)
+        total_quantize_time += time() - start_time
+    print("quantize_to_bytes", f"{total_quantize_time / iterations:.4f}s", sep="\t")
+
+    total_dequantize_time = 0
     gray_quants = quant.quantize_to_bytes(input_image)
-    # print("quantize_to_bytes", f"{time() - start_time}s", sep="\t")
+    print(len(gray_quants) // 1024, "KB")
+    for _ in range(iterations):
+        start_time = time()
+        quant.dequantize_from_bytes(gray_quants, input_image.width, input_image.height)
+        total_dequantize_time += time() - start_time
+    print("dequantize_to_bytes", f"{total_dequantize_time / iterations:.4f}s", sep="\t")
 
-    # print(len(gray_quants) // 1024, "KB")
+    quant.dequantize_from_bytes(gray_quants, input_image.width, input_image.height).show()
 
-    # start_time = time()
-    # _ = quant.dequantize_from_bytes_to_bytes(gray_quants, *input_image.size)
-    # print("dequantize_from_bytes", f"{time() - start_time}s", sep="\t")
-#
-    # start_time = time()
-    # result = quant.dequantize_from_bytes(gray_quants, *input_image.size)
-    # print("dequantize_from_bytes", f"{time() - start_time}s", sep="\t")
-#
-    # result.show()
+
+"""
+v10.png colors 4
+quantize_to_bytes	0.0419s
+quantize_to_bytes	0.0120s
+
+v10.png colors 4
+quantize_to_bytes	0.0083s
+75 KB
+dequantize_to_bytes	0.0123s
+
+v10.png colors 2
+quantize_to_bytes	0.0057s
+37 KB
+dequantize_to_bytes	0.0074s
+
+v4.png colors 4
+quantize_to_bytes	0.0475s
+504 KB
+dequantize_to_bytes	0.0659s
+
+v10.png colors 4
+quantize_to_bytes	0.0083s
+75 KB
+dequantize_to_bytes	0.0123s
+"""
+
