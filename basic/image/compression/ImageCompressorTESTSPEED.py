@@ -7,8 +7,8 @@ from typing import Tuple, Optional, Dict, Any
 
 from PIL import Image
 
-from basic.image.quanting.GrayscaleQuantizerBytes import GrayscaleQuantizerBytes
-from basic.image.quanting.RGBQuantizerBytes import RGBQuantizerBytes
+from basic.image.quanting.leg.GrayscaleQuantizerBytes import GrayscaleQuantizerBytes
+from basic.image.quanting.leg.RGBQuantizerBytes import RGBQuantizerBytes
 from time import time
 
 

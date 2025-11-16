@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional, Tuple
 
-from PIL import Image
+import numpy as np
 
 
 class ResizeMethod(Enum):
@@ -32,7 +32,7 @@ class ImageResizer(ABC):
     с поддержкой прямого и обратного преобразования
     """
 
-    def __init__(self, scale: float, method: ResizeMethod | int,original_size: Optional[Tuple[int, int]]):
+    def __init__(self, scale: float, method: ResizeMethod | int, original_size: Optional[Tuple[int, int]]):
         self.name = self.__class__.__name__
         self.scale = self._get_validated_scale(scale)
         self.original_size = None
@@ -95,53 +95,46 @@ class ImageResizer(ABC):
         return self.original_size, self.scale, self.method.get_index()
 
     @abstractmethod
-    def _basic_resize(self, image: Image.Image, target_size: Tuple[int, int]) -> Image.Image:
+    def _basic_resize(self, image: np.array, target_size: Tuple[int, int]) -> np.array:
         """Абстрактный метод для базового изменения размера"""
         ...
 
-    def resize(self, image: Image.Image) -> Image.Image:
+    def resize(self, image: np.array) -> np.array:
         """Изменить размер изображения до целевого размера"""
         if self.original_size is None:
             return self._basic_resize(image, self._calculate_target_size(image.size, self.scale))
-
-        if image.size != self.original_size:
-            raise ValueError(
-                f"Error in ImageResizer: " +
-                f"Image size {image.size} doesn't match expected original size {self.original_size}"
-            )
+        if (image.shape[1], image.shape[0]) != self.original_size:
+            raise ValueError(f"Image size {image.size} doesn't match expected original size {self.original_size}")
         return self._basic_resize(image, self.target_size)
 
-    def desize(self, image: Image.Image) -> Image.Image:
+    def desize(self, image: np.array) -> np.array:
         """Вернуть изображение к исходному размеру"""
         if self.original_size is None:
             return self._basic_resize(image, self._calculate_target_size(image.size, 1 / self.scale))
-
-        if image.size != self.target_size:
-            raise ValueError(
-                f"Error in ImageResizer: Image size {image.size} doesn't match expected target size {self.target_size}"
-            )
+        if (image.shape[1], image.shape[0]) != self.target_size:
+            raise ValueError(f"Image size {image.size} doesn't match expected target size {self.target_size}")
         return self._basic_resize(image, self.original_size)
 
     @staticmethod
-    def get_weight_loss_percent(scale: float) -> str:
-        """Рассчитать процент потери 'веса' (площади) при масштабировании"""
+    def get_compress_coefficient(scale: float) -> float:
+        """Рассчитать процент потери 'веса' при масштабировании"""
         if scale <= 0:
             raise ValueError("Scale must be positive")
-        return f"{(scale ** 2) * 100:.2f}%"
+        return scale ** 2
 
     @staticmethod
-    def print_weight_loss_percents() -> None:
+    def print_compress_table() -> None:
         """Напечатать таблицу потерь для разных масштабов"""
         scales_info = []
         for scale_100 in range(99, 0, -1):
             scale = scale_100 / 100
-            scales_info.append(f"{scale:.2f} = {ImageResizer.get_weight_loss_percent(scale)}")
+            scales_info.append(f"{scale:.2f} = {ImageResizer.get_compress_coefficient(scale) * 100:.2f} %")
         print("\n".join(scales_info))
 
     def __str__(self) -> str:
         """Строковое представление объекта"""
-        loss_percent = self.get_weight_loss_percent(self.scale) if self.scale > 0 else "N/A"
-        return f"{self.name}(scale={self.scale}, method={self.method.name}): {loss_percent}"
+        loss = self.get_compress_coefficient(self.scale) if self.scale > 0 else "N/A"
+        return f"{self.name}(scale={self.scale}, method={self.method.name}): {loss}"
 
     def __repr__(self) -> str:
         """Репрезентативное строковое представление"""
@@ -150,4 +143,4 @@ class ImageResizer(ABC):
 
 
 if __name__ == "__main__":
-    ImageResizer.print_weight_loss_percents()
+    ImageResizer.print_compress_table()

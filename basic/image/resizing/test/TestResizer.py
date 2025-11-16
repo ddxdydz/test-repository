@@ -1,6 +1,7 @@
 from pathlib import Path
 from time import time
 
+import numpy as np
 from PIL import Image
 
 from basic.image.resizing.ABC_ImageResizer import ImageResizer, ResizeMethod
@@ -16,10 +17,10 @@ class TestResizer:
     def __init__(self, resizer: ImageResizer, img_path: Path, iteration_count: int = 20):
         self.img_type = img_path.name[img_path.name.rfind("."):]
         self.iteration_count = iteration_count
-        self.original_image = Image.open(img_path)
-        self.original_image.save(f"{TestResizer.TEMP_PATH}\\0{self.img_type}")
+        self.original_image = np.array(Image.open(img_path), dtype=np.uint8)
+        Image.open(img_path).save(f"{TestResizer.TEMP_PATH}\\0{self.img_type}")
         self.resizer = resizer
-        self.resizer.reset_original_size(self.original_image.size)
+        self.resizer.reset_original_size((self.original_image.shape[1], self.original_image.shape[0]))
 
     def test_method(self, method: ResizeMethod, enable_print=True):
         self.resizer.reset_method(method)
@@ -39,7 +40,7 @@ class TestResizer:
         if enable_print:
             print(f"{method.name.ljust(10)}\t\tresize_time={resize_time} c\t\tdesize_time={desize_time} c")
 
-        return desized_img
+        return Image.fromarray(desized_img)
 
     def test(self):
         print(self.resizer)
