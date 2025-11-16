@@ -12,16 +12,23 @@ class GrayscaleQuantizerBytes(GrayscaleQuantizer):
         self._dequant_lut = np.array([self.quant_to_value(i) for i in range(self.COLORS)], dtype=np.uint8)
 
     def quantize_to_bytes(self, img: Image) -> bytes:
+        from time import time
         if img.mode != 'RGB':
             img = img.convert('RGB')
 
+        start = time()
         arr = np.array(img, dtype=np.uint8)
         width, height = img.size
         pixels_count = width * height
+        print("arr", time() - start)
 
         # Супербыстрое вычисление яркости и квантование через LUT
+        start = time()
         brightness = np.dot(arr, [0.299, 0.587, 0.114]).astype(np.uint8)
+        print("brightness", time() - start)
+        start = time()
         quantized = self._quant_lut[brightness.flatten()]
+        print("quantized", time() - start)
 
         bits_per_color = (self.COLORS - 1).bit_length()
 
@@ -142,18 +149,18 @@ if __name__ == "__main__":
 
     from time import time
 
-    start_time = time()
+    # start_time = time()
     gray_quants = quant.quantize_to_bytes(input_image)
-    print("quantize_to_bytes", f"{time() - start_time}s", sep="\t")
+    # print("quantize_to_bytes", f"{time() - start_time}s", sep="\t")
 
-    print(len(gray_quants) // 1024, "KB")
+    # print(len(gray_quants) // 1024, "KB")
 
-    start_time = time()
-    _ = quant.dequantize_from_bytes_to_bytes(gray_quants, *input_image.size)
-    print("dequantize_from_bytes", f"{time() - start_time}s", sep="\t")
-
-    start_time = time()
-    result = quant.dequantize_from_bytes(gray_quants, *input_image.size)
-    print("dequantize_from_bytes", f"{time() - start_time}s", sep="\t")
-
-    result.show()
+    # start_time = time()
+    # _ = quant.dequantize_from_bytes_to_bytes(gray_quants, *input_image.size)
+    # print("dequantize_from_bytes", f"{time() - start_time}s", sep="\t")
+#
+    # start_time = time()
+    # result = quant.dequantize_from_bytes(gray_quants, *input_image.size)
+    # print("dequantize_from_bytes", f"{time() - start_time}s", sep="\t")
+#
+    # result.show()
