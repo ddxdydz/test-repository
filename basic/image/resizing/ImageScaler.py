@@ -1,6 +1,7 @@
 from enum import Enum
 
 from PIL import Image
+from abc import ABC, abstractmethod
 
 
 class ResizeMethod(Enum):
@@ -12,10 +13,20 @@ class ResizeMethod(Enum):
     AREA = "area"
 
 
-class ImageScaler:
+class ImageResizer(ABC):
+    @abstractmethod
+    def resize(self, image: Image.Image) -> Image.Image:
+        ...
+
+    @abstractmethod
+    def desize(self, image: Image.Image) -> Image.Image:
+        ...
+
+
+class ImageScaler(ImageResizer):
     """Базовый класс для изменения размера изображения"""
 
-    def __init__(self, scale: float = 0.7, method: ResizeMethod | int = ResizeMethod.BILINEAR):
+    def __init__(self, scale: float = 0.7, method: ResizeMethod | int = ResizeMethod.LANCZOS):
         self.name = self.__class__.__name__
         self.method = method
         self.scale = scale

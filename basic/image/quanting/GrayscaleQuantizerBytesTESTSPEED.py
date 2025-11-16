@@ -218,9 +218,15 @@ class GrayscaleQuantizerBytes2(GrayscaleQuantizer):
 
 if __name__ == "__main__":
     input_image = Image.open(r"C:\Users\UserLog.ru\PycharmProjects\regular\basic\image\data\v4.png")
-    quant = GrayscaleQuantizerBytes2(colors=2)  # TODO быстро только для 4, 2, не работает для >4
-
     from time import time
+
+    from basic.image.resizing.ImageScaler import ImageScaler, ResizeMethod
+    scaler = ImageScaler(0.7, ResizeMethod.LANCZOS)
+    start_time = time()
+    input_image = scaler.resize(input_image)
+    print("scaler.resize", f"{time() - start_time}s", sep="\t")
+
+    quant = GrayscaleQuantizerBytes2(colors=4)  # TODO быстро только для 4, 2, не работает для >4
 
     start_time = time()
     gray_quants = quant.quantize_to_bytes(input_image)
@@ -232,4 +238,9 @@ if __name__ == "__main__":
     gray_quants_from_bytes = quant.dequantize_from_bytes(gray_quants, *input_image.size)
     print("dequantize_from_bytes", f"{time() - start_time}s", sep="\t")
 
-    gray_quants_from_bytes.show()
+
+    start_time = time()
+    input_image = scaler.desize(input_image)
+    print("scaler.desize", f"{time() - start_time}s", sep="\t")
+
+    # gray_quants_from_bytes.show()
