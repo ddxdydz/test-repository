@@ -6,7 +6,7 @@ import numpy as np
 from basic.image.packing.ABC_Packer import Packer
 
 
-class PackersTester:
+class PackerBenchmark:
     BITS_PER_VALUE_LIST = list(range(1, 9))
     TEST_CORRECTNESS_DATA_SHAPES = [(100, 100, 1), (200, 250, 2), (232, 201, 3)]
     TEST_SPEED_DATA_SHAPES = [(2000, 2000, 1), (2000, 2000, 2), (2000, 2000, 3),
@@ -99,7 +99,7 @@ class PackersTester:
             # Correctness
             print(packer.name.rjust(20), end="\t")
             s = time()
-            for bits_per_value in PackersTester.BITS_PER_VALUE_LIST:
+            for bits_per_value in self.BITS_PER_VALUE_LIST:
                 packer.set_bits_per_value(bits_per_value)
                 if not self._test_correctness(packer, bits_per_value):
                     print(packer, bits_per_value, "_test_correctness is failed")
@@ -110,7 +110,7 @@ class PackersTester:
             # Packing speed
             print(f"packing(sec)".rjust(20), end="\t")
             s = time()
-            for bits_per_value in PackersTester.BITS_PER_VALUE_LIST:
+            for bits_per_value in self.BITS_PER_VALUE_LIST:
                 packer.set_bits_per_value(bits_per_value)
                 avg_pack_time = self._test_performance_packing(
                     packer, bits_per_value, shape=data_for_speed_test, iterations=iterations)
@@ -120,7 +120,7 @@ class PackersTester:
             # Unpacking speed
             print(f"unpacking(sec)".rjust(20), end="\t")
             s = time()
-            for bits_per_value in PackersTester.BITS_PER_VALUE_LIST:
+            for bits_per_value in self.BITS_PER_VALUE_LIST:
                 packer.set_bits_per_value(bits_per_value)
                 avg_unpack_time = self._test_performance_unpacking(
                     packer, bits_per_value, shape=data_for_speed_test, iterations=iterations)
@@ -130,7 +130,7 @@ class PackersTester:
             # Compress
             print(f"compress_ratio".rjust(20), end="\t")
             s = time()
-            for bits_per_value in PackersTester.BITS_PER_VALUE_LIST:
+            for bits_per_value in PackerBenchmark.BITS_PER_VALUE_LIST:
                 packer.set_bits_per_value(bits_per_value)
                 ratio = self._test_compress(packer, bits_per_value, shape=data_for_speed_test)
                 print(f"{ratio:.6f}".rjust(10), end="\t")
@@ -142,5 +142,5 @@ if __name__ == "__main__":
     from basic.image.packing.NumbaPacker import NumbaPacker
     from basic.image.packing.CombPacker import CombPacker
 
-    tester = PackersTester()
+    tester = PackerBenchmark()
     tester.test([ShiftPacker(), NumbaPacker(), CombPacker()], iterations=200)

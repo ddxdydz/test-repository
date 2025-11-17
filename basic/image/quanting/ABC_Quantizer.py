@@ -7,16 +7,24 @@ import numpy as np
 class Quantizer(ABC):
     """Абстрактный базовый класс для квантователей"""
 
-    def __init__(self, colors, use_cv_optimizations=True):
-        if not (1 < colors < 257):
-            raise ValueError("Number of colors must be between 1 and 256")
-        self.COLORS = colors
-        self.bits_per_color = (self.COLORS - 1).bit_length()
+    def __init__(self, colors: int = 4, use_cv_optimizations=True):
+        self.name = self.__class__.__name__
+        self.COLORS = None
+        self.bits_per_color = None
+        self._quant_lut = None
+        self._dequant_lut = None
 
         if use_cv_optimizations:
             cv2.setNumThreads(0)  # Использовать все ядра
             cv2.useOptimized()  # Включить SIMD оптимизации
 
+        self.set_colors(colors)
+
+    def set_colors(self, colors: int):
+        if not (1 < colors < 257):
+            raise ValueError("Number of colors must be between 1 and 256")
+        self.COLORS = colors
+        self.bits_per_color = (self.COLORS - 1).bit_length()
         self._quant_lut = np.array([self._value_to_quant(i) for i in range(256)], dtype=np.uint8)
         self._dequant_lut = np.array(
             [self._quant_to_value(min(i, self.COLORS - 1)) for i in range(256)], dtype=np.uint8)
