@@ -25,12 +25,3 @@ class PILResizer(ImageResizer):
         if image.mode != 'RGB':
             image = image.convert('RGB')
         return np.array(image.resize(target_size, PILResizer._PIL_MAPPING[self.method]), dtype=np.uint8)
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-    from basic.image.resizing.test.TestResizer import TestResizer
-    image_path = Path(__file__).parent.parent / "data" / "v10.png"
-    test_pil = TestResizer(PILResizer(scale=0.6), image_path, 100)
-    test_pil.DATA_PATH = image_path
-    test_pil.test()

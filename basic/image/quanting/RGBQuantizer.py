@@ -13,3 +13,15 @@ class RGBQuantizer(Quantizer):
 
     def dequantize(self, quantized_image: np.ndarray) -> np.ndarray:
         return cv2.LUT(quantized_image, self._dequant_lut)
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+    from PIL import Image
+
+    quantizer = RGBQuantizer(4)
+
+    img_path = Path(__file__).parent.parent / "data" / "v4.png"
+    original_img = Image.open(img_path)
+    img_array = np.array(original_img, dtype=np.uint8)
+    Image.fromarray(quantizer.dequantize(quantizer.quantize(img_array))).show()
