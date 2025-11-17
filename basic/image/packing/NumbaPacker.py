@@ -8,6 +8,13 @@ class NumbaPacker(Packer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def calculate_packed_size(self, array: np.ndarray) -> Tuple[int, int]:
+        total_bits = array.size * self.bits_per_value
+        data_size = (total_bits + 7) // 8  # Округление вверх
+        # Размер заголовка: 2 байт для количества измерений + 2 байта на каждое измерение
+        header_size = 2 + len(array.shape) * 2
+        return header_size, data_size
+
     @njit(parallel=True)
     def pack_array(self, array: np.ndarray) -> bytes:
         result = np.zeros(self.calculate_packed_size(array), dtype=np.uint8)
