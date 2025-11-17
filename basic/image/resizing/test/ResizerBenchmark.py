@@ -89,5 +89,5 @@ if __name__ == "__main__":
     from basic.image.resizing.PILResizer import PILResizer
 
     path = Path(__file__).parent.parent.parent / "data" / "v10.png"
-    ResizerBenchmark.save_resized_images(CVResizer(0.6), path)
+    # ResizerBenchmark.save_resized_images(CVResizer(0.6), path)
     ResizerBenchmark.test([CVResizer(), PILResizer()], path, 400)
