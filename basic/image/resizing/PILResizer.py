@@ -13,7 +13,9 @@ class PILResizer(ImageResizer):
         ResizeMethod.BILINEAR: Image.BILINEAR,
         ResizeMethod.BICUBIC: Image.BICUBIC,
         ResizeMethod.LANCZOS: Image.LANCZOS,
-        ResizeMethod.AREA: Image.BOX
+        ResizeMethod.AREA: Image.BOX,
+        ResizeMethod.LINEAR_EXACT: Image.NEAREST,
+        ResizeMethod.NEAREST_EXACT: Image.NEAREST
     }
 
     def __init__(self, scale: float = 0.6, method: ResizeMethod | int = ResizeMethod.LANCZOS,

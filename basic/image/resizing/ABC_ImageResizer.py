@@ -12,6 +12,8 @@ class ResizeMethod(Enum):
     BICUBIC = "bicubic"
     LANCZOS = "lanczos"
     AREA = "area"
+    LINEAR_EXACT = "exlinear"
+    NEAREST_EXACT = "nearest_ exact"
 
     @classmethod
     def get_by_index(cls, index: int):

@@ -11,7 +11,8 @@ from basic.image.resizing.ABC_ImageResizer import ImageResizer, ResizeMethod
 class ResizerBenchmark:
     TEMP_PATH = Path(__file__).parent.parent.parent / "resizing" / "test" / "temp_data"
     METHODS = [ResizeMethod.NEAREST, ResizeMethod.AREA, ResizeMethod.BILINEAR,
-               ResizeMethod.BICUBIC, ResizeMethod.LANCZOS]
+               ResizeMethod.BICUBIC, ResizeMethod.LANCZOS, ResizeMethod.LINEAR_EXACT,
+               ResizeMethod.NEAREST_EXACT]
 
     @staticmethod
     def save_resized_images(resizer: ImageResizer, img_path: Path, scale=None):
@@ -88,5 +89,5 @@ if __name__ == "__main__":
     from basic.image.resizing.PILResizer import PILResizer
 
     path = Path(__file__).parent.parent.parent / "data" / "v10.png"
-    # ResizerBenchmark.save_resized_images(CVResizer(0.6), path)
+    ResizerBenchmark.save_resized_images(CVResizer(0.6), path)
     ResizerBenchmark.test([CVResizer(), PILResizer()], path, 400)

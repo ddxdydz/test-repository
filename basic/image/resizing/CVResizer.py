@@ -11,7 +11,9 @@ class CVResizer(ImageResizer):
         ResizeMethod.BILINEAR: cv2.INTER_LINEAR,
         ResizeMethod.BICUBIC: cv2.INTER_CUBIC,
         ResizeMethod.LANCZOS: cv2.INTER_LANCZOS4,
-        ResizeMethod.AREA: cv2.INTER_AREA
+        ResizeMethod.AREA: cv2.INTER_AREA,
+        ResizeMethod.LINEAR_EXACT: cv2.INTER_LINEAR_EXACT,
+        ResizeMethod.NEAREST_EXACT: cv2.INTER_NEAREST_EXACT
     }
 
     def __init__(self, scale: float = 0.6, method: ResizeMethod | int = ResizeMethod.LANCZOS,
