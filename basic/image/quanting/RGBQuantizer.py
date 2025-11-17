@@ -15,7 +15,7 @@ class RGBQuantizer(Quantizer):
         return cv2.LUT(image, self._quant_lut)
 
     def dequantize(self, quantized_image: np.ndarray) -> np.ndarray:
-        return cv2.LUT(image, self._dequant_lut)
+        return cv2.LUT(quantized_image, self._dequant_lut)
 
     def pack_quantized(self, quantized_image: np.ndarray) -> bytes:
         return pack_image(quantized_image.flatten(), self.bits_per_color, quantized_image.size)
