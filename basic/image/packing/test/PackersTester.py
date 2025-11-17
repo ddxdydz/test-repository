@@ -4,7 +4,9 @@ from typing import List, Tuple
 import numpy as np
 
 from basic.image.packing.ABC_Packer import Packer
+from basic.image.packing.NumbaPacker import NumbaPacker
 from basic.image.packing.ShiftPacker import ShiftPacker
+from basic.image.packing.ShiftPacker2 import ShiftPacker2
 
 
 class PackersTester:
@@ -84,12 +86,16 @@ class PackersTester:
 
         return float(np.mean(unpack_times))
 
+    def _test_compress(self, packer: Packer, bits_per_value: int,
+                       shape: Tuple[int, int, int]) -> float:
+
+        test_data = self._generate_test_data(bits_per_value, shape)
+        packed_data = packer.pack_array(test_data)
+        return len(packed_data) / len(test_data.tobytes())
+
     def test(self, packers: List[Packer], iterations=10):
         data_for_speed_test = self.TEST_SPEED_DATA_SHAPE_REGULAR
-        m = 1
-        for d in data_for_speed_test:
-            m *= d
-        print(m, data_for_speed_test)
+        print(np.prod(data_for_speed_test), data_for_speed_test)
         print(str().rjust(20), *[str(bpv).rjust(10, ' ') for bpv in self.BITS_PER_VALUE_LIST], sep="\t")
 
         for packer in packers:
@@ -105,7 +111,7 @@ class PackersTester:
             print(f"{time() - s:.6f}")
 
             # Packing speed
-            print(f"packing".rjust(20), end="\t")
+            print(f"packing(sec)".rjust(20), end="\t")
             s = time()
             for bits_per_value in PackersTester.BITS_PER_VALUE_LIST:
                 packer.set_bits_per_value(bits_per_value)
@@ -115,7 +121,7 @@ class PackersTester:
             print(f"{time() - s:.6f}")
 
             # Unpacking speed
-            print(f"unpacking".rjust(20), end="\t")
+            print(f"unpacking(sec)".rjust(20), end="\t")
             s = time()
             for bits_per_value in PackersTester.BITS_PER_VALUE_LIST:
                 packer.set_bits_per_value(bits_per_value)
@@ -124,7 +130,17 @@ class PackersTester:
                 print(f"{avg_unpack_time:.6f}".rjust(10), end="\t")
             print(f"{time() - s:.6f}")
 
+            # Compress
+            print(f"compress_ratio".rjust(20), end="\t")
+            s = time()
+            for bits_per_value in PackersTester.BITS_PER_VALUE_LIST:
+                packer.set_bits_per_value(bits_per_value)
+                ratio = self._test_compress(packer, bits_per_value, shape=data_for_speed_test)
+                print(f"{ratio:.6f}".rjust(10), end="\t")
+            print(f"{time() - s:.6f}")
+
 
 if __name__ == "__main__":
     tester = PackersTester()
-    tester.test([ShiftPacker()], iterations=1000)
+    tester.test([ShiftPacker(), ShiftPacker(), ShiftPacker2(), ShiftPacker2()], iterations=1000)
+    # tester.test([ShiftPacker2()], iterations=100)

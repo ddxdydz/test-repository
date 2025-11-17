@@ -8,40 +8,59 @@ class NumbaPacker(Packer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def calculate_packed_size(self, array: np.ndarray) -> Tuple[int, int]:
-        total_bits = array.size * self.bits_per_value
-        data_size = (total_bits + 7) // 8  # Округление вверх
-        # Размер заголовка: 2 байт для количества измерений + 2 байта на каждое измерение
-        header_size = 2 + len(array.shape) * 2
-        return header_size, data_size
-
-    @njit(parallel=True)
     def pack_array(self, array: np.ndarray) -> bytes:
-        result = np.zeros(self.calculate_packed_size(array), dtype=np.uint8)
+        # Предварительные вычисления вне Numba
+        total_bits = array.size * self.bits_per_value
+        total_bytes = (total_bits + 7) // 8
+
+        # Вызов Numba-функции
+        packed_data = self._pack_array_numba(array.flatten(), total_bytes, self.bits_per_value)
+
+        header = self._pack_shape(array.shape)
+        return header + packed_data
+
+    @staticmethod
+    @njit(parallel=True)
+    def _pack_array_numba(array: np.ndarray, data_size: int, bits_per_value: int) -> bytes:
+        result = np.zeros(data_size, dtype=np.uint8)
         for i in prange(array.size):
             value = array[i]
-            start_bit = i * self.bits_per_value
-            for bit in range(self.bits_per_value):
+            start_bit = i * bits_per_value
+            for bit in range(bits_per_value):
                 if value & (1 << bit):
                     byte_pos = (start_bit + bit) // 8
-                    bit_pos = 7 - ((start_bit + bit) % 8)  # big-endian порядок
+                    bit_pos = (start_bit + bit) % 8
                     result[byte_pos] |= (1 << bit_pos)
         return result.tobytes()
 
-    @njit(parallel=True)
     def unpack_array(self, data: bytes) -> np.ndarray:
-        result = np.zeros(self.calculate_packed_size(array), dtype=np.uint32)
-        total_bits = len(data) * 8
+        shape, packed_data = self._unpack_shape_header(data)
+        total_elements = int(np.prod(shape))
 
-        for i in prange(output_size):
-            start_bit = i * self.bits_per_value
+        # Конвертируем bytes в numpy array ПЕРЕД вызовом Numba
+        data_array = np.frombuffer(packed_data, dtype=np.uint8)
+
+        # Вызов Numba-функции с numpy array вместо bytes
+        flat_array = self._unpack_array_numba(data_array, total_elements, self.bits_per_value)
+
+        return flat_array.reshape(shape)
+
+    @staticmethod
+    @njit(parallel=True)
+    def _unpack_array_numba(data_array: np.ndarray, total_elements: int, bits_per_value: int) -> np.ndarray:
+        result = np.zeros(total_elements, dtype=np.uint8)
+        total_bits = data_array.size * 8
+
+        for i in prange(total_elements):
+            start_bit = i * bits_per_value
             value = 0
-            for bit in range(self.bits_per_value):
+            for bit in range(bits_per_value):
                 current_bit = start_bit + bit
                 if current_bit < total_bits:
                     byte_pos = current_bit // 8
-                    bit_pos = 7 - (current_bit % 8)  # согласованность с pack_image
-                    if data[byte_pos] & (1 << bit_pos):
+                    bit_pos = current_bit % 8
+                    if data_array[byte_pos] & (1 << bit_pos):
                         value |= (1 << bit)
             result[i] = value
+
         return result

@@ -73,7 +73,7 @@ class ShiftPacker(Packer):
             result = unpacked[:expected_size].reshape(shape)
         elif self.bits_per_value == 2:
             arr = np.frombuffer(packed_array, dtype=np.uint8)
-            unpacked_size = len(arr) * 4
+            unpacked_size = arr.size * 4
             unpacked = np.zeros(unpacked_size, dtype=np.uint8)
             unpacked[0::4] = (arr >> 6) & 0x3
             unpacked[1::4] = (arr >> 4) & 0x3
@@ -82,8 +82,8 @@ class ShiftPacker(Packer):
             result = unpacked[:expected_size].reshape(shape)
         elif self.bits_per_value == 3:
             arr = np.frombuffer(packed_array, dtype=np.uint16)
-            unpacked_size = len(arr) * 5
-            unpacked = np.zeros(unpacked_size, dtype=np.uint16)
+            unpacked_size = arr.size * 5
+            unpacked = np.zeros(unpacked_size, dtype=np.uint8)
             unpacked[0::5] = (arr >> 13) & 0x7
             unpacked[1::5] = (arr >> 10) & 0x7
             unpacked[2::5] = (arr >> 7) & 0x7
@@ -92,23 +92,23 @@ class ShiftPacker(Packer):
             result = unpacked[:expected_size].reshape(shape)
         elif self.bits_per_value == 4:
             arr = np.frombuffer(packed_array, dtype=np.uint8)
-            unpacked_size = len(arr) * 2
+            unpacked_size = arr.size * 2
             unpacked = np.zeros(unpacked_size, dtype=np.uint8)
             unpacked[0::2] = (arr >> 4) & 0xF
             unpacked[1::2] = arr & 0xF
             result = unpacked[:expected_size].reshape(shape)
         elif self.bits_per_value == 5:
             arr = np.frombuffer(packed_array, dtype=np.uint16)
-            unpacked_size = len(arr) * 3
-            unpacked = np.zeros(unpacked_size, dtype=np.uint16)
+            unpacked_size = arr.size * 3
+            unpacked = np.zeros(unpacked_size, dtype=np.uint8)
             unpacked[0::3] = (arr >> 11) & 0x1F
             unpacked[1::3] = (arr >> 6) & 0x1F
             unpacked[2::3] = (arr >> 1) & 0x1F
             result = unpacked[:expected_size].reshape(shape)
         elif self.bits_per_value == 6:
             arr = np.frombuffer(packed_array, dtype=np.uint32)
-            unpacked_size = len(arr) * 5
-            unpacked = np.zeros(unpacked_size, dtype=np.uint32)
+            unpacked_size = arr.size * 5
+            unpacked = np.zeros(unpacked_size, dtype=np.uint8)
             unpacked[0::5] = (arr >> 26) & 0x3F
             unpacked[1::5] = (arr >> 20) & 0x3F
             unpacked[2::5] = (arr >> 14) & 0x3F
@@ -122,4 +122,4 @@ class ShiftPacker(Packer):
         else:
             raise ValueError("ShiftPacker.unpack: self.bits_per_value not in 1-8")
 
-        return result.astype(np.uint8)
+        return result
