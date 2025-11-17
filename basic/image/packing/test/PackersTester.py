@@ -12,6 +12,7 @@ class PackersTester:
     TEST_CORRECTNESS_DATA_SHAPES = [(100, 100, 1), (200, 250, 2), (232, 201, 3)]
     TEST_SPEED_DATA_SHAPES = [(2000, 2000, 1), (2000, 2000, 2), (2000, 2000, 3),
                               (200, 200, 1), (200, 200, 2), (200, 200, 3)]
+    TEST_SPEED_DATA_SHAPE_REGULAR = (1200, 800, 1)
 
     def __init__(self):
         self._test_data_cache = {}
@@ -84,7 +85,7 @@ class PackersTester:
         return float(np.mean(unpack_times))
 
     def test(self, packers: List[Packer], iterations=10):
-        data_for_speed_test = self.TEST_SPEED_DATA_SHAPES[4]
+        data_for_speed_test = self.TEST_SPEED_DATA_SHAPE_REGULAR
         m = 1
         for d in data_for_speed_test:
             m *= d
@@ -126,4 +127,4 @@ class PackersTester:
 
 if __name__ == "__main__":
     tester = PackersTester()
-    tester.test([ShiftPacker()])
+    tester.test([ShiftPacker()], iterations=1000)
