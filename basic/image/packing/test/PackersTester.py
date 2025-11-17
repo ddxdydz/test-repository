@@ -139,8 +139,8 @@ class PackersTester:
 
 if __name__ == "__main__":
     from basic.image.packing.ShiftPacker import ShiftPacker
-    from basic.image.packing.ShiftPacker2 import ShiftPacker2
+    from basic.image.packing.NumbaPacker import NumbaPacker
+    from basic.image.packing.CombPacker import CombPacker
 
     tester = PackersTester()
-    # tester.test([ShiftPacker(), ShiftPacker(), ShiftPacker2(), ShiftPacker2()], iterations=300)
-    tester.test([ShiftPacker2()], iterations=100)
+    tester.test([ShiftPacker(), NumbaPacker(), CombPacker()], iterations=200)

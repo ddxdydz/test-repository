@@ -90,7 +90,7 @@ class Packer(ABC):
         offset = Packer.BYTES_PER_NDIM + Packer.BYTES_PER_DIMENSION * ndim
 
         if len(data) < offset:
-            raise ValueError(f"Data too short: need {offset} bytes, got {len(data)}")
+            raise ValueError(f"Data too short: need {offset} bytes, got {len(data)}. ndim={ndim}")
 
         shape = []
         for i in range(ndim):

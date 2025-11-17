@@ -1,9 +1,13 @@
+from typing import TypeAlias
+
 import numpy as np
 
 from basic.image.packing.ABC_Packer import Packer
 
+from numba import njit, prange
 
-class ShiftPacker2(Packer):
+
+class CombPacker(Packer):
     _TYPES_MAP = {
         # bits_per_value: (dtype, dtype_bits_count, values_per_dtype)
         1: (np.uint8, 8, 8),
@@ -12,7 +16,7 @@ class ShiftPacker2(Packer):
         4: (np.uint8, 8, 2),
         5: (np.uint16, 16, 3),
         6: (np.uint32, 32, 5),
-        7: (np.uint8, 8, 1),
+        7: (np.uint64, 64, 9),
         8: (np.uint8, 8, 1),
     }
     _MASK_MAP = {1: 0b00000001, 2: 0b00000011, 3: 0b00000111, 4: 0b00001111,
@@ -24,12 +28,53 @@ class ShiftPacker2(Packer):
 
     def __init__(self, bits_per_value: int = 8):
         super().__init__(bits_per_value)
+        self.warm_njit()
+
+    def warm_njit(self):
+        """Прогрев для различных возможных размеров входных данных, создаёт компиляторы njit заранее"""
+        test_cases = [np.ones((1, 1, 1), dtype=np.uint8), np.ones((1, 1), dtype=np.uint8),
+                      np.ones((1,), dtype=np.uint8),]
+        initial_bits_per_value = self.bits_per_value
+        for bits_per_value in self._MASK_MAP.keys():
+            self.set_bits_per_value(bits_per_value)
+            for test_data in test_cases:
+                self.unpack_array(self.pack_array(test_data))
+        self.set_bits_per_value(initial_bits_per_value)
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _pack_array_numba(padded: np.ndarray, padded_length: int, values_per_dtype: int, dtype: TypeAlias,
+                          shifts: np.ndarray) -> bytes:
+        packed = np.zeros(padded_length // values_per_dtype, dtype=dtype)
+
+        for i in prange(len(packed)):
+            result = 0
+            for value_pos_in_dtype in range(values_per_dtype):
+                shift = shifts[value_pos_in_dtype]
+                idx = value_pos_in_dtype + i * values_per_dtype
+                result |= (padded[idx] << shift)
+            packed[i] = result
+
+        return packed.tobytes()
+
+    @staticmethod
+    @njit(parallel=True, cache=True)
+    def _unpack_array_numba(arr: np.ndarray, values_per_dtype: int, bit_mask: int, shifts: np.ndarray):
+        unpacked = np.zeros(arr.size * values_per_dtype, dtype=np.uint8)
+
+        for value_pos_in_dtype in prange(values_per_dtype):
+            shift = shifts[value_pos_in_dtype]
+            for i in range(len(arr)):
+                idx = value_pos_in_dtype + i * values_per_dtype
+                unpacked[idx] = (arr[i] >> shift) & bit_mask
+
+        return unpacked
 
     @staticmethod
     def _pack_array_shift(array_flat: np.ndarray, bits_per_value: int) -> bytes:
         try:
-            dtype, dtype_bits_count, values_per_dtype = ShiftPacker2._TYPES_MAP[bits_per_value]
-            shifts = ShiftPacker2._SHIFTS_MAP[bits_per_value]
+            dtype, dtype_bits_count, values_per_dtype = CombPacker._TYPES_MAP[bits_per_value]
+            shifts = CombPacker._SHIFTS_MAP[bits_per_value]
 
             padded_length = ((array_flat.size + (values_per_dtype - 1)) // values_per_dtype) * values_per_dtype
             if padded_length > array_flat.size:
@@ -39,38 +84,23 @@ class ShiftPacker2(Packer):
             else:
                 padded = array_flat.astype(dtype)
 
-            packed = np.zeros(padded_length // values_per_dtype, dtype=dtype)
-            for value_pos_in_dtype, shift in enumerate(shifts):
-                packed |= (padded[value_pos_in_dtype::values_per_dtype] << shift)
-
-            # reshaped = padded.reshape(-1, values_per_dtype)  # Переформатируем массив для векторной обработки
-            # packed = np.sum(reshaped << shifts, axis=1, dtype=dtype)  # Векторная операция упаковки
-
-            return packed.tobytes()
+            return CombPacker._pack_array_numba(padded, padded_length, values_per_dtype, dtype, shifts)
         except Exception as ex:
-            print(f"ShiftPacker2._pack_array_shift: Packing failed for {bits_per_value} bits")
+            print(f"CombPacker._pack_array_shift: Packing failed for {bits_per_value} bits")
             raise ex
 
     @staticmethod
     def _unpack_array_shift(packed_array: bytes, bits_per_value: int, expected_size: int) -> np.ndarray:
         try:
-            dtype, dtype_bits_count, values_per_dtype = ShiftPacker2._TYPES_MAP[bits_per_value]
-            bit_mask = ShiftPacker2._MASK_MAP[bits_per_value]
-            shifts = ShiftPacker2._SHIFTS_MAP[bits_per_value]
+            dtype, dtype_bits_count, values_per_dtype = CombPacker._TYPES_MAP[bits_per_value]
+            bit_mask = CombPacker._MASK_MAP[bits_per_value]
+            shifts = CombPacker._SHIFTS_MAP[bits_per_value]
 
             arr = np.frombuffer(packed_array, dtype=dtype)
 
-            unpacked = np.zeros(arr.size * values_per_dtype, dtype=np.uint8)
-            for value_pos_in_dtype, shift in enumerate(shifts):
-                unpacked[value_pos_in_dtype::values_per_dtype] = (arr >> shift) & bit_mask
-
-            # arr_expanded = np.repeat(arr, values_per_dtype)  # Повторяем массив для векторной обработки
-            # shifts_tiled = np.tile(shifts, arr.size)  # Создаем матрицу сдвигов
-            # unpacked = (arr_expanded >> (dtype_bits_count - shifts_tiled - bits_per_value)) & bit_mask
-
-            return unpacked[:expected_size]
+            return CombPacker._unpack_array_numba(arr, values_per_dtype, bit_mask, shifts)[:expected_size]
         except Exception as ex:
-            raise ValueError(f"ShiftPacker2._unpack_array_shift: Unpacking failed for {bits_per_value} bits. {ex}")
+            raise ValueError(f"CombPacker._unpack_array_shift: Unpacking failed for {bits_per_value} bits. {ex}")
 
     def pack_array(self, array: np.ndarray) -> bytes:
         """Упаковка через сдвиги с сохранением формы массива"""
@@ -80,14 +110,12 @@ class ShiftPacker2(Packer):
 
         if self.bits_per_value == 1:
             packed_array = np.packbits(array_flat).tobytes()
-        elif self.bits_per_value == 7:
-            packed_array = array_flat.tobytes()
         elif self.bits_per_value == 8:
             packed_array = array_flat.tobytes()
-        elif self.bits_per_value in (2, 3, 4, 5, 6):
+        elif self.bits_per_value in (2, 3, 4, 5, 6, 7):
             packed_array = self._pack_array_shift(array_flat, self.bits_per_value)
         else:
-            raise ValueError("ShiftPacker2.pack: self.bits_per_value not in 1-8")
+            raise ValueError("CombPacker.pack: self.bits_per_value not in 1-8")
 
         header = self._pack_shape(array.shape)  # Запаковываем заголовок
         return header + packed_array
@@ -101,14 +129,12 @@ class ShiftPacker2(Packer):
             arr = np.frombuffer(packed_array, dtype=np.uint8)
             unpacked = np.unpackbits(arr)
             array = unpacked[:expected_size].reshape(shape)
-        elif self.bits_per_value == 7:
-            array = np.frombuffer(packed_array, dtype=np.uint8).reshape(shape)
         elif self.bits_per_value == 8:
             array = np.frombuffer(packed_array, dtype=np.uint8).reshape(shape)
-        elif self.bits_per_value in (2, 3, 4, 5, 6):
+        elif self.bits_per_value in (2, 3, 4, 5, 6, 7):
             array = self._unpack_array_shift(packed_array, self.bits_per_value, expected_size).reshape(shape)
         else:
-            raise ValueError("ShiftPacker2.unpack: self.bits_per_value not in 1-8")
+            raise ValueError("CombPacker.unpack: self.bits_per_value not in 1-8")
 
         self._validate_array(array)
 

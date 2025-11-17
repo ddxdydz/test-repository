@@ -45,14 +45,6 @@ class Quantizer(ABC):
     def dequantize(self, quantized_image: np.ndarray) -> np.ndarray:
         pass
 
-    @abstractmethod
-    def pack_quantized(self, quantized_image: np.ndarray) -> bytes:
-        pass
-
-    @abstractmethod
-    def unpack_quantized(self, data: bytes, image_width: int, image_height: int) -> np.ndarray:
-        pass
-
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(colors={self.COLORS}, bits_per_color={self.bits_per_color})"
 
