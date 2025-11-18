@@ -116,13 +116,14 @@ class CombQuantizer(Quantizer):
 
         tamped_image = self._dequant_palette_lut[quantized_image].flatten()
 
-        # rgb_image_flatten = np.zeros(tamped_image.size * 3, dtype=np.uint8)
-        # rgb_image_flatten[0::3] = (tamped_image >> 16) & 0b11111111
-        # rgb_image_flatten[1::3] = (tamped_image >> 8) & 0b11111111
-        # rgb_image_flatten[2::3] = tamped_image & 0b11111111
+        rgb_image_flatten = np.zeros(tamped_image.size * 3, dtype=np.uint8)
+        rgb_image_flatten[0::3] = (tamped_image >> 16) & 0b11111111
+        rgb_image_flatten[1::3] = (tamped_image >> 8) & 0b11111111
+        rgb_image_flatten[2::3] = tamped_image & 0b11111111
 
-        rgb_image_flatten = CombPacker._untamp_array_by_shift(
-            tamped_image, 0b11111111, 3, self.shifts)[:tamped_image.size * 3]
+        # иногда долго работает в test.py
+        # rgb_image_flatten = CombPacker._untamp_array_by_shift(
+        #     tamped_image, 0b11111111, 3, self.shifts)[:tamped_image.size * 3]
 
         rgb_image = rgb_image_flatten.reshape((quantized_image.shape[0], quantized_image.shape[1], 3))
 

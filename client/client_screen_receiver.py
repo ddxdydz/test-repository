@@ -3,7 +3,7 @@ from time import time, strftime, gmtime
 
 from PIL import Image
 
-from basic.image.compression.ImageCompressor import ImageCompressor
+from alegacy.image.ImageCompressor import ImageCompressor
 from server.support.tools import recv_with_header_size
 
 

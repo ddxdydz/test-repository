@@ -1,3 +1,4 @@
 alegacy
 *.pyc
 .idea
+# __pycache__

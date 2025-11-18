@@ -83,7 +83,7 @@ if __name__ == "__main__":
     from basic.image.quanting.RGBQuantizer import RGBQuantizer
     from basic.image.quanting.CombQuantizer import CombQuantizer
 
-    img_path = Path(__file__).parent.parent.parent / "data" / "v10.png"
+    img_path = Path(__file__).parent.parent.parent / "data" / "v4.png"
     tester = QuantizerBenchmark()
     tester.test([CombQuantizer(), GrayQuantizer(4), RGBQuantizer(4)], img_path, 100)
     tester.test([CombQuantizer(), GrayQuantizer(4), RGBQuantizer(4)], img_path, 100)

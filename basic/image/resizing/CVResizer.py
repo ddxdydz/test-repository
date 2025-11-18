@@ -16,7 +16,7 @@ class CVResizer(ImageResizer):
         ResizeMethod.NEAREST_EXACT: cv2.INTER_NEAREST_EXACT
     }
 
-    def __init__(self, scale: float = 0.6, method: ResizeMethod | int = ResizeMethod.LANCZOS,
+    def __init__(self, scale: float = 0.6, method: ResizeMethod | int = ResizeMethod.BICUBIC,
                  original_size: tuple[int, int] | None = None):
         super().__init__(scale, method, original_size)
 
