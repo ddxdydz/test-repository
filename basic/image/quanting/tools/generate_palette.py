@@ -43,4 +43,4 @@ if __name__ == "__main__":
         print(f"{i}, {is_correct}, {time() - s:.6f}")
         if not is_correct:
             print(i, len(set(p)))
-            break
+            input()

@@ -1,3 +1,5 @@
+from typing import TypeAlias
+
 import numpy as np
 
 from basic.image.packing.ABC_Packer import Packer
@@ -21,62 +23,64 @@ class ShiftPacker(Packer):
     for bits_per_value in range(1, 9):
         dtype, dtype_bits_count, values_per_dtype = _TYPES_MAP[bits_per_value]
         _SHIFTS_MAP[bits_per_value] = dtype_bits_count - bits_per_value * (np.arange(values_per_dtype, dtype=dtype) + 1)
+    # print(*list(_SHIFTS_MAP.items()), sep="\n")
 
     def __init__(self, bits_per_value: int = 8):
         super().__init__(bits_per_value)
 
     @staticmethod
-    def _pack_array_shift(array_flat: np.ndarray, bits_per_value: int) -> bytes:
+    def _tamp_array_by_shift(flatted_array: np.ndarray, bits_per_value: int,
+                             target_dtype: TypeAlias, values_per_dtype: int) -> np.ndarray:
         try:
-            dtype, dtype_bits_count, values_per_dtype = ShiftPacker._TYPES_MAP[bits_per_value]
             shifts = ShiftPacker._SHIFTS_MAP[bits_per_value]
 
-            padded_length = ((array_flat.size + (values_per_dtype - 1)) // values_per_dtype) * values_per_dtype
-            if padded_length > array_flat.size:
-                padded = np.empty(padded_length, dtype=dtype)
-                padded[:array_flat.size] = array_flat
-                padded[array_flat.size:] = 0
+            aligned_length = ((flatted_array.size + (values_per_dtype - 1)) // values_per_dtype) * values_per_dtype
+            if aligned_length > flatted_array.size:
+                aligned_array = np.empty(aligned_length, dtype=target_dtype)
+                aligned_array[:flatted_array.size] = flatted_array
+                aligned_array[flatted_array.size:] = 0
             else:
-                padded = array_flat.astype(dtype)
+                aligned_array = flatted_array.astype(target_dtype)
 
-            packed = np.zeros(padded_length // values_per_dtype, dtype=dtype)
+            tamped = np.zeros(aligned_length // values_per_dtype, dtype=target_dtype)
             for value_pos_in_dtype, shift in enumerate(shifts):
-                packed |= (padded[value_pos_in_dtype::values_per_dtype] << shift)
+                tamped |= (aligned_array[value_pos_in_dtype::values_per_dtype] << shift)
 
-            return packed.tobytes()
+            return tamped
         except Exception as ex:
-            print(f"ShiftPacker._pack_array_shift: Packing failed for {bits_per_value} bits")
+            print(f"ShiftPacker._tamp_array_by_shift: Tamping failed for {bits_per_value} bits: ")
             raise ex
 
     @staticmethod
-    def _unpack_array_shift(packed_array: bytes, bits_per_value: int, expected_size: int) -> np.ndarray:
+    def _untamp_array_by_shift(tamped_array: np.ndarray, bits_per_value: int,
+                               expected_size: int, values_per_dtype: int) -> np.ndarray:
         try:
-            dtype, dtype_bits_count, values_per_dtype = ShiftPacker._TYPES_MAP[bits_per_value]
             bit_mask = ShiftPacker._MASK_MAP[bits_per_value]
             shifts = ShiftPacker._SHIFTS_MAP[bits_per_value]
 
-            arr = np.frombuffer(packed_array, dtype=dtype)
-
-            unpacked = np.zeros(arr.size * values_per_dtype, dtype=np.uint8)
+            untamped = np.zeros(tamped_array.size * values_per_dtype, dtype=np.uint8)
             for value_pos_in_dtype, shift in enumerate(shifts):
-                unpacked[value_pos_in_dtype::values_per_dtype] = (arr >> shift) & bit_mask
+                untamped[value_pos_in_dtype::values_per_dtype] = (tamped_array >> shift) & bit_mask
 
-            return unpacked[:expected_size]
+            return untamped[:expected_size]
         except Exception as ex:
-            raise ValueError(f"ShiftPacker._unpack_array_shift: Unpacking failed for {bits_per_value} bits. {ex}")
+            print(f"ShiftPacker._untamp_array_by_shift: Untamping failed for {bits_per_value} bits: ")
+            raise ex
 
     def pack_array(self, array: np.ndarray) -> bytes:
         """Упаковка через сдвиги с сохранением формы массива"""
         self._validate_array(array)
 
-        array_flat = array.flatten()
+        flatten_array = array.flatten()
 
         if self.bits_per_value == 1:
-            packed_array = np.packbits(array_flat).tobytes()
+            packed_array = np.packbits(flatten_array).tobytes()
         elif self.bits_per_value == 8:
-            packed_array = array_flat.tobytes()
+            packed_array = flatten_array.tobytes()
         elif self.bits_per_value in (2, 3, 4, 5, 6, 7):
-            packed_array = self._pack_array_shift(array_flat, self.bits_per_value)
+            dtype, dtype_bits_count, values_per_dtype = ShiftPacker._TYPES_MAP[self.bits_per_value]
+            tamped_array = self._tamp_array_by_shift(flatten_array, self.bits_per_value, dtype, values_per_dtype)
+            packed_array = tamped_array.tobytes()
         else:
             raise ValueError("ShiftPacker.pack: self.bits_per_value not in 1-8")
 
@@ -95,7 +99,10 @@ class ShiftPacker(Packer):
         elif self.bits_per_value == 8:
             array = np.frombuffer(packed_array, dtype=np.uint8).reshape(shape)
         elif self.bits_per_value in (2, 3, 4, 5, 6, 7):
-            array = self._unpack_array_shift(packed_array, self.bits_per_value, expected_size).reshape(shape)
+            dtype, dtype_bits_count, values_per_dtype = ShiftPacker._TYPES_MAP[self.bits_per_value]
+            untamped_array = np.frombuffer(packed_array, dtype=dtype)
+            array = self._untamp_array_by_shift(untamped_array, self.bits_per_value,
+                                                expected_size, values_per_dtype).reshape(shape)
         else:
             raise ValueError("ShiftPacker.unpack: self.bits_per_value not in 1-8")
 

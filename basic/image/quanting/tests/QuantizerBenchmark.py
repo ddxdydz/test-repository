@@ -40,7 +40,8 @@ class QuantizerBenchmark:
         img_array = np.array(original_img, dtype=np.uint8)
 
         print(path.name, img_array.shape, img_array.size)
-        print(str().rjust(20), *[str(bpv).rjust(10, ' ') for bpv in self.BITS_PER_COLORS_LIST], sep="\t")
+        print(str().rjust(20), *[str(bpv).rjust(10, ' ') for bpv in self.BITS_PER_COLORS_LIST],
+              "avg".rjust(10, ' '), sep="\t")
 
         for quantizer in quantizers:
 
@@ -80,7 +81,8 @@ class QuantizerBenchmark:
 if __name__ == "__main__":
     from basic.image.quanting.GrayQuantizer import GrayQuantizer
     from basic.image.quanting.RGBQuantizer import RGBQuantizer
+    from basic.image.quanting.CombQuantizer import CombQuantizer
 
     img_path = Path(__file__).parent.parent.parent / "data" / "v10.png"
     tester = QuantizerBenchmark()
-    tester.test([GrayQuantizer(4), RGBQuantizer(4)], img_path, 1000)
+    tester.test([CombQuantizer(), GrayQuantizer(4), RGBQuantizer(4)], img_path, 100)
