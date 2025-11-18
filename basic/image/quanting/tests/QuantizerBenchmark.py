@@ -39,7 +39,7 @@ class QuantizerBenchmark:
         original_img = Image.open(path)
         img_array = np.array(original_img, dtype=np.uint8)
 
-        print(path.name, img_array.shape, img_array.size)
+        print(path.name, img_array.shape, img_array.size, f"iterations={iterations}")
         print(str().rjust(20), *[str(bpv).rjust(10, ' ') for bpv in self.BITS_PER_COLORS_LIST],
               "avg".rjust(10, ' '), sep="\t")
 
@@ -86,3 +86,29 @@ if __name__ == "__main__":
     img_path = Path(__file__).parent.parent.parent / "data" / "v10.png"
     tester = QuantizerBenchmark()
     tester.test([CombQuantizer(), GrayQuantizer(4), RGBQuantizer(4)], img_path, 100)
+    tester.test([CombQuantizer(), GrayQuantizer(4), RGBQuantizer(4)], img_path, 100)
+
+
+"""
+v10.png (480, 640, 3) 921600, iterations=100
+                    	         1	         2	         3	         4	         5	         6	         7	         8	       avg
+       CombQuantizer
+          quant(sec)	  0.008454	  0.010274	  0.008579	  0.010267	  0.008517	  0.010201	  0.008901	  0.010284	0.009435
+        dequant(sec)	  0.007355	  0.007058	  0.007277	  0.007080	  0.007244	  0.007172	  0.007107	  0.007057	0.007169
+      compress_ratio	  0.041667	  0.083333	  0.125000	  0.166667	  0.208333	  0.250000	  0.291667	  0.333333	0.187500
+       GrayQuantizer
+          quant(sec)	  0.000450	  0.000448	  0.000449	  0.000447	  0.000450	  0.000448	  0.000445	  0.000450	0.000448
+        dequant(sec)	  0.000553	  0.000548	  0.000547	  0.000555	  0.000539	  0.000549	  0.000547	  0.000550	0.000548
+      compress_ratio	  0.041667	  0.083333	  0.125000	  0.166667	  0.208333	  0.250000	  0.291667	  0.333333	0.187500
+        RGBQuantizer
+          quant(sec)	  0.000796	  0.000762	  0.000748	  0.000751	  0.000753	  0.000753	  0.000747	  0.000726	0.000755
+        dequant(sec)	  0.000750	  0.000733	  0.000749	  0.000739	  0.000712	  0.000740	  0.000750	  0.000723	0.000737
+      compress_ratio	  0.125000	  0.250000	  0.375000	  0.500000	  0.625000	  0.750000	  0.875000	  1.000000	0.562500
+
+v10.png (480, 640, 3) 921600 iterations=100
+                    	         1	         2	         3	         4	         5	         6	         7	         8	       avg
+       CombQuantizer
+          quant(sec)	  0.013841	  0.007833	  0.007839	  0.007748	  0.007805	  0.007707	  0.007911	  0.007976	0.008583
+        dequant(sec)	  0.005550	  0.005807	  0.005321	  0.005747	  0.005345	  0.005836	  0.005381	  0.005810	0.005600
+      compress_ratio	  0.041667	  0.083333	  0.125000	  0.166667	  0.208333	  0.250000	  0.291667	  0.333333	0.187500
+"""

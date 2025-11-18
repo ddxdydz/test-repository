@@ -38,44 +38,30 @@ class CombPacker(ShiftPacker):
 
     @staticmethod
     @njit(parallel=True, cache=True)
-    def _untamp_array_by_numba(tamped_array: np.ndarray, values_per_dtype: int, bit_mask: int, shifts: np.ndarray):
+    def _untamp_array_by_numba(tamped_array: np.ndarray, bit_mask: int, values_per_dtype: int, shifts: np.ndarray):
         untamped = np.zeros(tamped_array.size * values_per_dtype, dtype=np.uint8)
         for value_pos_in_dtype in prange(values_per_dtype):
             shift = shifts[value_pos_in_dtype]
             for i in range(len(tamped_array)):
                 idx = value_pos_in_dtype + i * values_per_dtype
                 untamped[idx] = (tamped_array[i] >> shift) & bit_mask
-
         return untamped
 
     @staticmethod
-    def _tamp_array_by_shift(flatted_array: np.ndarray, bits_per_value: int,
-                             target_dtype: TypeAlias, values_per_dtype: int) -> np.ndarray:
-        try:
-            shifts = ShiftPacker._SHIFTS_MAP[bits_per_value]
+    def _tamp_array_by_shift(flatted_array: np.ndarray, target_dtype: TypeAlias,
+                             values_per_dtype: int, shifts: np.array) -> np.ndarray:
+        aligned_length = ((flatted_array.size + (values_per_dtype - 1)) // values_per_dtype) * values_per_dtype
+        if aligned_length > flatted_array.size:
+            aligned_array = np.empty(aligned_length, dtype=target_dtype)
+            aligned_array[:flatted_array.size] = flatted_array
+            aligned_array[flatted_array.size:] = 0
+        else:
+            aligned_array = flatted_array.astype(target_dtype)
 
-            aligned_length = ((flatted_array.size + (values_per_dtype - 1)) // values_per_dtype) * values_per_dtype
-            if aligned_length > flatted_array.size:
-                aligned_array = np.empty(aligned_length, dtype=target_dtype)
-                aligned_array[:flatted_array.size] = flatted_array
-                aligned_array[flatted_array.size:] = 0
-            else:
-                aligned_array = flatted_array.astype(target_dtype)
-
-            return CombPacker._tamp_array_by_numba(
-                aligned_array, aligned_length, values_per_dtype, target_dtype, shifts)
-        except Exception as ex:
-            print(f"CombPacker._tamp_array_by_shift: Tamping failed for {bits_per_value} bits: ")
-            raise ex
+        return CombPacker._tamp_array_by_numba(
+            aligned_array, aligned_length, values_per_dtype, target_dtype, shifts)
 
     @staticmethod
-    def _untamp_array_by_shift(tamped_array: np.ndarray, bits_per_value: int,
-                               expected_size: int, values_per_dtype: int) -> np.ndarray:
-        try:
-            bit_mask = ShiftPacker._MASK_MAP[bits_per_value]
-            shifts = ShiftPacker._SHIFTS_MAP[bits_per_value]
-
-            return CombPacker._untamp_array_by_numba(tamped_array, values_per_dtype, bit_mask, shifts)[:expected_size]
-        except Exception as ex:
-            print(f"CombPacker._untamp_array_by_shift: Untamping failed for {bits_per_value} bits: ")
-            raise ex
+    def _untamp_array_by_shift(tamped_array: np.ndarray, bit_mask: int, values_per_dtype: int, shifts: np.ndarray):
+        return CombPacker._untamp_array_by_numba(
+            tamped_array, bit_mask, values_per_dtype, shifts)

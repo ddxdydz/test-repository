@@ -92,7 +92,7 @@ class PackerBenchmark:
 
     def test(self, packers: List[Packer], iterations=10):
         data_for_speed_test = self.TEST_SPEED_DATA_SHAPE_REGULAR
-        print(np.prod(data_for_speed_test), data_for_speed_test)
+        print(np.prod(data_for_speed_test), data_for_speed_test, f"iterations={iterations}")
         print(str().rjust(20), *[str(bpv).rjust(10, ' ') for bpv in self.BITS_PER_VALUE_LIST],
               "avg".rjust(10, ' '), sep="\t")
 
@@ -150,15 +150,15 @@ if __name__ == "__main__":
 960000 (1200, 800, 1)
                     	         1	         2	         3	         4	         5	         6	         7	         8	       avg
           CombPacker	       yes	       yes	       yes	       yes	       yes	       yes	       yes	       yes	
-        packing(sec)	  0.000487	  0.002264	  0.004303	  0.002256	  0.004835	  0.006315	  0.009209	  0.001467	0.003892
-      unpacking(sec)	  0.000332	  0.001209	  0.001867	  0.001988	  0.001631	  0.001957	  0.001297	  0.000281	0.001320
+        packing(sec)	  0.000398	  0.002230	  0.003542	  0.001677	  0.003887	  0.005066	  0.007511	  0.001155	0.003183
+      unpacking(sec)	  0.000221	  0.001034	  0.001268	  0.001336	  0.001152	  0.001231	  0.001023	  0.000181	0.000931
       compress_ratio	  0.125007	  0.250007	  0.400007	  0.500007	  0.666674	  0.800007	  0.888899	  1.000007	
          ShiftPacker	       yes	       yes	       yes	       yes	       yes	       yes	       yes	       yes	
-        packing(sec)	  0.000463	  0.005479	  0.007083	  0.005532	  0.008202	  0.011867	  0.019691	  0.001964	0.007535
-      unpacking(sec)	  0.000326	  0.004567	  0.004572	  0.004333	  0.005266	  0.006249	  0.014632	  0.000250	0.005024
+        packing(sec)	  0.000354	  0.003762	  0.004726	  0.003742	  0.005323	  0.006845	  0.012456	  0.001044	0.004782
+      unpacking(sec)	  0.000219	  0.003056	  0.003603	  0.002980	  0.004960	  0.007007	  0.009924	  0.000143	0.003987
       compress_ratio	  0.125007	  0.250007	  0.400007	  0.500007	  0.666674	  0.800007	  0.888899	  1.000007	
          NumbaPacker	       yes	       yes	       yes	       yes	       yes	       yes	       yes	       yes	
-        packing(sec)	  0.002057	  0.003334	  0.004738	  0.006978	  0.008571	  0.009800	  0.011455	  0.013430	0.007545
-      unpacking(sec)	  0.002334	  0.004074	  0.005839	  0.007523	  0.009717	  0.011221	  0.012994	  0.015966	0.008708
+        packing(sec)	  0.001034	  0.001542	  0.002297	  0.003532	  0.004357	  0.004984	  0.005846	  0.006955	0.003818
+      unpacking(sec)	  0.001096	  0.001758	  0.002824	  0.003582	  0.004433	  0.005014	  0.006185	  0.007077	0.003996
       compress_ratio	  0.125007	  0.250007	  0.375007	  0.500007	  0.625007	  0.750007	  0.875007	  1.000007	
 """
