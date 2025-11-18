@@ -22,7 +22,7 @@ class ShiftPacker(Packer):
     _SHIFTS_MAP = dict()
     for bits_per_value in range(1, 9):
         dtype, dtype_bits_count, values_per_dtype = _TYPES_MAP[bits_per_value]
-        _SHIFTS_MAP[bits_per_value] = dtype_bits_count - bits_per_value * (np.arange(values_per_dtype, dtype=dtype) + 1)
+        _SHIFTS_MAP[bits_per_value] = bits_per_value * np.arange(values_per_dtype, dtype=dtype)[::-1]
     # print(*list(_SHIFTS_MAP.items()), sep="\n")
 
     def __init__(self, bits_per_value: int = 8):
