@@ -19,9 +19,9 @@ if __name__ == "__main__":
     from pathlib import Path
     from PIL import Image
 
-    quantizer = GrayQuantizer(4)
+    quantizer = GrayQuantizer(3)
 
-    img_path = Path(__file__).parent.parent / "data" / "v4.png"
+    img_path = Path(__file__).parent.parent / "data" / "g2.png"
     original_img = Image.open(img_path)
     img_array = np.array(original_img, dtype=np.uint8)
     Image.fromarray(quantizer.dequantize(quantizer.quantize(img_array))).show()

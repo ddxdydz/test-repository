@@ -8,14 +8,18 @@ from basic.image.__all_tools import *
 
 # LZMA не используется, всегда самый медленный
 
-img_path = Path(__file__).parent / "data" / "v9.png"  # не влияет, влияют только scale и colors
-resizer = CVResizer(0.5)  # чем больше, тем дольше BZ2
-quantizer = GrayQuantizer(16)  # чем больше, тем быстрее BZ2 (в разы), только для Gray
+img_path = Path(__file__).parent / "data" / "a9.png"  # не влияет, влияют только scale и colors
+resizer = CVResizerIntScale(50)  # чем больше, тем дольше BZ2
+quantizer = GrayQuantizer(7)  # чем больше, тем быстрее BZ2 (в разы), только для Gray
 # quantizer = CombQuantizer(8)
 packer = CombPacker(quantizer.bits_per_color)
 
+image = Image.open(img_path)
 _start_time = time()
-resized = resizer.resize(np.array(Image.open(img_path), dtype=np.uint8))
+img_array = np.array(image, dtype=np.uint8)
+print("opened".ljust(20), f"{time() - _start_time:.6f}")
+_start_time = time()
+resized = resizer.resize(img_array)
 print("resized".ljust(20), f"{time() - _start_time:.6f}")
 _start_time = time()
 quantized = quantizer.quantize(resized)
@@ -52,4 +56,4 @@ _start_time = time()
 desized = resizer.desize(dequantized)
 print("desized".ljust(20), f"{time() - _start_time:.6f}")
 
-Image.fromarray(desized).show()
+# Image.fromarray(desized).show()

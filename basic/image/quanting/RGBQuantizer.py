@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     quantizer = RGBQuantizer(4)
 
-    img_path = Path(__file__).parent.parent / "data" / "v4.png"
+    img_path = Path(__file__).parent.parent / "data" / "a10.png"
     original_img = Image.open(img_path)
     img_array = np.array(original_img, dtype=np.uint8)
     Image.fromarray(quantizer.dequantize(quantizer.quantize(img_array))).show()

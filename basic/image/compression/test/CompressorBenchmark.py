@@ -94,17 +94,17 @@ if __name__ == "__main__":
 
     from PIL import Image
     from basic.image.__all_tools import *
-    img_path = Path(__file__).parent.parent.parent / "data" / "v10.png"
+    img_path = Path(__file__).parent.parent.parent / "data" / "g1.png"
     original_img = Image.open(img_path)
     img_array = np.array(original_img, dtype=np.uint8)
-    quantizer = GrayQuantizer(32)
+    quantizer = GrayQuantizer(8)
     packer = CombPacker(quantizer.bits_per_color)
     test_data = packer.pack_array(quantizer.quantize(img_array))
     # packer = CombPacker(8)
     # test_data = packer.pack_array(img_array)
 
     tester = CompressorBenchmark()
-    tester.test([ChunkWrapper(LZMACompressor()), ChunkWrapper(BZ2Compressor()), ChunkWrapper(ZlibCompressor()),
+    tester.test([Adapti, MultiCompressor(), ChunkWrapper(LZMACompressor()), ChunkWrapper(BZ2Compressor()), ChunkWrapper(ZlibCompressor()),
                  LZMACompressor(), BZ2Compressor(), ZlibCompressor()], test_data, 5)
 
 """

@@ -6,3 +6,6 @@ from basic.image.resizing.CVResizer import CVResizer
 from basic.image.resizing.CVResizerIntScale import CVResizerIntScale
 from basic.image.compression.base_compressors import *
 from basic.image.compression.ChunkWrapper import ChunkWrapper
+from basic.image.compression.MultiCompressor import MultiCompressor
+from basic.image.compression.AdaptiveCompressor import AdaptiveCompressor
+from basic.image.compression.TryCompressor import TryCompressor

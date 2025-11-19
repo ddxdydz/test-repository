@@ -104,6 +104,8 @@ class ImageResizer(ABC):
     def resize(self, image: np.array) -> np.array:
         """Изменить размер изображения до целевого размера"""
         image_size = (image.shape[1], image.shape[0])
+        if self.scale + 0.01 > 1:
+            return image
         if self.original_size is None:
             return self._basic_resize(image, self._calculate_target_size(image_size, self.scale))
         if image_size != self.original_size:
@@ -113,6 +115,8 @@ class ImageResizer(ABC):
     def desize(self, image: np.array) -> np.array:
         """Вернуть изображение к исходному размеру"""
         image_size = (image.shape[1], image.shape[0])
+        if self.scale + 0.01 > 1:
+            return image
         if self.original_size is None:
             return self._basic_resize(image, self._calculate_target_size(image_size, 1 / self.scale))
         if image_size != self.target_size:
