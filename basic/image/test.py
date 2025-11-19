@@ -6,39 +6,50 @@ from PIL import Image
 
 from basic.image.__all_tools import *
 
-img_path = Path(__file__).parent / "data" / "v10.png"
-original_img = Image.open(img_path)
-img_array = np.array(original_img, dtype=np.uint8)
+# LZMA не используется, всегда самый медленный
 
-resizer = CVResizer(0.6)
-quantizer = GrayQuantizer(3)
+img_path = Path(__file__).parent / "data" / "v9.png"  # не влияет, влияют только scale и colors
+resizer = CVResizer(0.5)  # чем больше, тем дольше BZ2
+quantizer = GrayQuantizer(16)  # чем больше, тем быстрее BZ2 (в разы), только для Gray
 # quantizer = CombQuantizer(8)
 packer = CombPacker(quantizer.bits_per_color)
-compressor = LZMACompressor()
 
 _start_time = time()
-resized = resizer.resize(img_array)
-print("resized".ljust(20), time() - _start_time)
+resized = resizer.resize(np.array(Image.open(img_path), dtype=np.uint8))
+print("resized".ljust(20), f"{time() - _start_time:.6f}")
 _start_time = time()
 quantized = quantizer.quantize(resized)
-print("quantized".ljust(20), time() - _start_time)
+print("quantized".ljust(20), f"{time() - _start_time:.6f}")
 _start_time = time()
 packed = packer.pack_array(quantized)
-print("packed".ljust(20), time() - _start_time)
+print("packed".ljust(20), f"{time() - _start_time:.6f}")
+
 _start_time = time()
+compressor = BZ2Compressor()  # нестабильный, иногда самый быстрый (v9, 0.9, 3)
 compressed = compressor.compress(packed)
-print("compressed".ljust(20), time() - _start_time, len(compressed) // 1024, "KB", len(compressed), "B")
+print(f"{compressor.name}".ljust(30),
+      f"{time() - _start_time:.6f}", len(compressed) // 1024, "KB", len(compressed), "B")
+"""
+CW(BZ2Compressor)              0.005699 10 KB 10347 B
+CW(ZlibCompressor)             0.010401 9 KB 9506 B
+"""
+_start_time = time()
+compressor = ZlibCompressor()  # стабильней, часто самый быстрый  (v9, 0.5, 7), всегда лучшая сжимаемость
+compressed = compressor.compress(packed)
+print(f"{compressor.name}".ljust(30),
+      f"{time() - _start_time:.6f}", len(compressed) // 1024, "KB", len(compressed), "B")
+
 _start_time = time()
 decompressed = compressor.decompress(compressed)
-print("decompressed".ljust(20), time() - _start_time)
+print("decompressed".ljust(20), f"{time() - _start_time:.6f}")
 _start_time = time()
 unpacked = packer.unpack_array(decompressed)
-print("unpacked".ljust(20), time() - _start_time)
+print("unpacked".ljust(20), f"{time() - _start_time:.6f}")
 _start_time = time()
 dequantized = quantizer.dequantize(unpacked)
-print("dequantized".ljust(20), time() - _start_time)
+print("dequantized".ljust(20), f"{time() - _start_time:.6f}")
 _start_time = time()
 desized = resizer.desize(dequantized)
-print("desized".ljust(20), time() - _start_time)
+print("desized".ljust(20), f"{time() - _start_time:.6f}")
 
 Image.fromarray(desized).show()

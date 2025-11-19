@@ -1,12 +1,14 @@
 from pathlib import Path
 from time import time
 from typing import List
+
 import numpy as np
-from basic.image.compression.compressors import Compressor
+
+from basic.image.compression.base_compressors import Compressor
 
 
 class CompressorBenchmark:
-    TEST_DATA_WEIGHTS = (1024, 2048, 4096, 4096 * 2, 4096 * 4, 4096 * 8)
+    TEST_DATA_WEIGHTS = (1024, 4096, 4096 * 8)
 
     def __init__(self):
         self._test_data_cache = {}
@@ -57,7 +59,7 @@ class CompressorBenchmark:
             print(compressor.name.rjust(20))
 
             # Тестирование сжатия
-            print(f"compress(sec)".rjust(20), end="\t")
+            print(f"- compress(sec)".rjust(20), end="\t")
             compress_times = []
             for weight in self.TEST_DATA_WEIGHTS:
                 # test_data = self._generate_test_data(weight)
@@ -67,7 +69,7 @@ class CompressorBenchmark:
             print(f"\t{float(np.mean(compress_times)):.6f}")
 
             # Тестирование распаковки
-            print(f"decompress(sec)".rjust(20), end="\t")
+            print(f"- decompress(sec)".rjust(20), end="\t")
             decompress_times = []
             for weight in self.TEST_DATA_WEIGHTS:
                 # test_data = self._generate_test_data(weight)
@@ -77,7 +79,7 @@ class CompressorBenchmark:
             print(f"\t{float(np.mean(decompress_times)):.6f}")
 
             # Тестирование коэффициента сжатия
-            print(f"compress_ratio".rjust(20), end="\t")
+            print(f"- compress_ratio".rjust(20), end="\t")
             compress_ratios = []
             for weight in self.TEST_DATA_WEIGHTS:
                 # test_data = self._generate_test_data(weight)
@@ -88,22 +90,22 @@ class CompressorBenchmark:
 
 
 if __name__ == "__main__":
-    from basic.image.compression.compressors import *
+    from basic.image.compression.base_compressors import *
 
     from PIL import Image
-    from basic.image.quanting.GrayQuantizer import GrayQuantizer
-    from basic.image.packing.CombPacker import CombPacker
-    img_path = Path(__file__).parent.parent.parent / "data" / "v4.png"
+    from basic.image.__all_tools import *
+    img_path = Path(__file__).parent.parent.parent / "data" / "v10.png"
     original_img = Image.open(img_path)
     img_array = np.array(original_img, dtype=np.uint8)
-    quantizer = GrayQuantizer(4)
-    # packer = CombPacker(quantizer.bits_per_color)
-    # test_data = packer.pack_array(quantizer.quantize(img_array))
-    packer = CombPacker(8)
-    test_data = packer.pack_array(img_array)
+    quantizer = GrayQuantizer(32)
+    packer = CombPacker(quantizer.bits_per_color)
+    test_data = packer.pack_array(quantizer.quantize(img_array))
+    # packer = CombPacker(8)
+    # test_data = packer.pack_array(img_array)
 
     tester = CompressorBenchmark()
-    tester.test([ZlibCompressor(), LZMACompressor(), BZ2Compressor(), GzipCompressor()], test_data, 10)
+    tester.test([ChunkWrapper(LZMACompressor()), ChunkWrapper(BZ2Compressor()), ChunkWrapper(ZlibCompressor()),
+                 LZMACompressor(), BZ2Compressor(), ZlibCompressor()], test_data, 5)
 
 """
 iterations=10, test_data: 504 KB = 517116 B
