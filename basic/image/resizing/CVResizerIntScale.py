@@ -14,7 +14,7 @@ class CVResizerIntScale(CVResizer):
     @staticmethod
     def _get_validated_scale_percent(scale_percent: int) -> int:
         if scale_percent < 1 or scale_percent > 100:
-            raise ValueError(f"Error in ImageResizer: Scale percent must be between 1 and 100")
+            raise ValueError(f"Error in ImageResizer: Scale percent must be between 1 and 100, got {scale_percent}")
         return scale_percent
 
     def set_scale_percent(self, scale_percent: int) -> None:

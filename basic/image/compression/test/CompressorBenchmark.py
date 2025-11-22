@@ -133,8 +133,8 @@ class CompressorBenchmark:
 
 
 if __name__ == "__main__":
-    # for img_name in ["a2.png", "a3.png", "a4.png", "a5.png", "a6.png", "a7.png", "a8.png", "a9.png", "a10.png",
-    #                  "g1.png", "g2.png"]:
+    # for img_name in ["a2.jpg", "a3.jpg", "a4.jpg", "a5.jpg", "a6.jpg", "a7.jpg", "a8.jpg", "a9.jpg", "a10.jpg",
+    #                  "g1.jpg", "g2.jpg"]:
     #     benchmark = CompressorBenchmark(Path(__file__).parent.parent.parent / "data" / img_name)
     #     benchmark.print_line()
     #     benchmark.print_data_weight_table()
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     #     benchmark.print_compress_time_comparison_table(BZ2Compressor(), ZlibCompressor())
     #     benchmark.print_compress_time_comparison_table(BZ2Compressor(), LZMACompressor())
 
-    # benchmark = CompressorBenchmark(Path(__file__).parent.parent.parent / "data" / "a7.png")
+    # benchmark = CompressorBenchmark(Path(__file__).parent.parent.parent / "data" / "a7.jpg")
     # benchmark.print_compress_time_table(BZ2Compressor())
     # benchmark.print_compress_time_table(ZlibCompressor())
     # benchmark.print_compress_time_table(LZMACompressor())
@@ -152,6 +152,6 @@ if __name__ == "__main__":
     # benchmark.print_compress_ratio_table(ZlibCompressor())
     # benchmark.print_compress_ratio_table(LZMACompressor())
 
-    benchmark = CompressorBenchmark(Path(__file__).parent.parent.parent / "data" / "a7.png")
+    benchmark = CompressorBenchmark(Path(__file__).parent.parent.parent / "data" / "a7.jpg")
     print(benchmark._test_compress(BZ2Compressor(), benchmark._prepare(60, 4), 1))
     print(benchmark._test_compress(ThreadCompressor(), benchmark._prepare(60, 4), 1))

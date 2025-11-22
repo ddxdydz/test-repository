@@ -43,7 +43,7 @@ class ImageResizer(ABC):
         self.set_original_size(original_size)
 
     @staticmethod
-    def _calculate_target_size(original_size: Tuple[int, int], scale: float) -> Tuple[int, int]:
+    def calculate_target_size(original_size: Tuple[int, int], scale: float) -> Tuple[int, int]:
         """Вычислить целевой размер на основе исходного размера и масштаба"""
         return max(1, round(original_size[0] * scale)), max(1, round(original_size[1] * scale))
 
@@ -79,13 +79,13 @@ class ImageResizer(ABC):
             self.target_size = None
         else:
             self.original_size = self._get_validated_size(original_size)
-            self.target_size = self._calculate_target_size(original_size, self.scale)
+            self.target_size = self.calculate_target_size(original_size, self.scale)
 
     def set_scale(self, scale: float) -> None:
         """Установить новый коэффициент масштабирования"""
         self.scale = self._get_validated_scale(scale)
         if self.original_size is not None:
-            self.target_size = self._calculate_target_size(self.original_size, self.scale)
+            self.target_size = self.calculate_target_size(self.original_size, self.scale)
 
     def set_method(self, method: ResizeMethod | int) -> ResizeMethod:
         """Установить новый метод масштабирования"""
@@ -107,7 +107,7 @@ class ImageResizer(ABC):
         if self.scale + 0.01 > 1:
             return image
         if self.original_size is None:
-            return self._basic_resize(image, self._calculate_target_size(image_size, self.scale))
+            return self._basic_resize(image, self.calculate_target_size(image_size, self.scale))
         if image_size != self.original_size:
             raise ValueError(f"Image size {image.size} doesn't match expected original size {self.original_size}")
         return self._basic_resize(image, self.target_size)
@@ -118,7 +118,7 @@ class ImageResizer(ABC):
         if self.scale + 0.01 > 1:
             return image
         if self.original_size is None:
-            return self._basic_resize(image, self._calculate_target_size(image_size, 1 / self.scale))
+            return self._basic_resize(image, self.calculate_target_size(image_size, 1 / self.scale))
         if image_size != self.target_size:
             raise ValueError(f"Image size {image.size} doesn't match expected target size {self.target_size}")
         return self._basic_resize(image, self.original_size)

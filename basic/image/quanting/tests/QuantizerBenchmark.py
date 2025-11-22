@@ -83,14 +83,14 @@ if __name__ == "__main__":
     from basic.image.quanting.RGBQuantizer import RGBQuantizer
     from basic.image.quanting.CombQuantizer import CombQuantizer
 
-    img_path = Path(__file__).parent.parent.parent / "data" / "a10.png"
+    img_path = Path(__file__).parent.parent.parent / "data" / "a10.jpg"
     tester = QuantizerBenchmark()
     tester.test([CombQuantizer(), GrayQuantizer(4), RGBQuantizer(4)], img_path, 100)
     tester.test([CombQuantizer(), GrayQuantizer(4), RGBQuantizer(4)], img_path, 100)
 
 
 """
-a6.png (480, 640, 3) 921600, iterations=100
+a6.jpg (480, 640, 3) 921600, iterations=100
                     	         1	         2	         3	         4	         5	         6	         7	         8	       avg
        CombQuantizer
           quant(sec)	  0.008454	  0.010274	  0.008579	  0.010267	  0.008517	  0.010201	  0.008901	  0.010284	0.009435
@@ -105,7 +105,7 @@ a6.png (480, 640, 3) 921600, iterations=100
         dequant(sec)	  0.000750	  0.000733	  0.000749	  0.000739	  0.000712	  0.000740	  0.000750	  0.000723	0.000737
       compress_ratio	  0.125000	  0.250000	  0.375000	  0.500000	  0.625000	  0.750000	  0.875000	  1.000000	0.562500
 
-a6.png (480, 640, 3) 921600 iterations=100
+a6.jpg (480, 640, 3) 921600 iterations=100
                     	         1	         2	         3	         4	         5	         6	         7	         8	       avg
        CombQuantizer
           quant(sec)	  0.013841	  0.007833	  0.007839	  0.007748	  0.007805	  0.007707	  0.007911	  0.007976	0.008583
