@@ -111,15 +111,18 @@ if __name__ == "__main__":
 
     for image_name in ["ch1.jpg", "ch2.jpg", "ch3.jpg", "ch3.jpg"]:
         img_path = Path(__file__).parent.parent / "data" / image_name
-        resizer = CVResizerIntScale(60)
-        quantizer = GrayQuantizer(3)
-        packer = NoTampingPacker(quantizer.bits_per_color)
-        compressor = BZ2Compressor()
 
         image = Image.open(img_path)
         img_array = np.asarray(image, dtype=np.uint8)
         if len(img_array.shape) == 3 and img_array.shape[2] == 4:
             img_array = img_array[:, :, :3]
+        print(img_array.shape)
+
+        resizer = CVResizerIntScale(scale_percent=60, original_size=(img_array.shape[1], img_array.shape[0]))
+        quantizer = GrayQuantizer(3)
+        packer = NoTampingPacker(quantizer.bits_per_color)
+        compressor = BZ2Compressor()
+
         resized = resizer.resize(img_array)
         quantized = quantizer.quantize(resized)
 
@@ -140,7 +143,8 @@ if __name__ == "__main__":
         dequantized = quantizer.dequantize(dediffed)
         desized = resizer.desize(dequantized)
 
-        Image.fromarray(desized).show()
+        print(desized.shape)
+        # Image.fromarray(desized).show()
 
 
 """
