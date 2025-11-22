@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
     diff_handler = GrayscaleDifferenceHandler(3, 60, (719, 1279))
 
-    for image_name in ["ch1.jpg", "ch2.jpg", "ch3.jpg"]:
+    for image_name in ["ch1.jpg", "ch2.jpg", "ch3.jpg", "ch3.jpg"]:
         img_path = Path(__file__).parent.parent / "data" / image_name
         resizer = CVResizerIntScale(60)
         quantizer = GrayQuantizer(3)
