@@ -1,26 +1,29 @@
+from math import inf
 from pathlib import Path
 from time import time
-from typing import List
 
 import numpy as np
+from PIL import Image
 
-from basic.image.compression.base_compressors import Compressor
+from basic.image.__all_tools import *
 
 
 class CompressorBenchmark:
-    TEST_DATA_WEIGHTS = (1024, 4096, 4096 * 8)
+    def __init__(self, image_path: Path):
+        self.image_path = image_path
+        self.image = Image.open(image_path)
+        self.image_array = np.array(self.image, dtype=np.uint8)
+        self.cache = dict()
 
-    def __init__(self):
-        self._test_data_cache = {}
-
-    def _generate_test_data(self, data_weight: int) -> bytes:
-        """Генерирует тестовые данные для сжатия"""
-        cache_key = data_weight
-        if cache_key not in self._test_data_cache:
-            # Генерируем случайные данные заданного размера
-            data = np.random.bytes(data_weight)
-            self._test_data_cache[cache_key] = data
-        return self._test_data_cache[cache_key]
+    def _prepare(self, input_scale: int, input_colors: int) -> bytes:
+        if (input_scale, input_colors) not in self.cache.keys():
+            resizer = CVResizerIntScale(input_scale)
+            quantizer = GrayQuantizer(input_colors)
+            packer = NoTampingPacker(quantizer.bits_per_color)
+            resized = resizer.resize(self.image_array)
+            quantized = quantizer.quantize(resized)
+            self.cache[(input_scale, input_colors)] = packer.pack_array(quantized)
+        return self.cache[(input_scale, input_colors)]
 
     @staticmethod
     def _test_compress(compressor: Compressor, data: bytes, iterations: int) -> float:
@@ -49,109 +52,106 @@ class CompressorBenchmark:
         compressed = compressor.compress(data)
         return len(compressed) / len(data)
 
-    def test(self, compressors: List[Compressor], data: bytes, iterations: int = 100):
-        """Запускает тестирование компрессоров"""
-        print(f"iterations={iterations}, test_data: {len(data) // 1024} KB = {len(data)} B")
-        # print("".rjust(20), *[str(w).rjust(10, ' ') for w in self.TEST_DATA_WEIGHTS],
-        #       "avg".rjust(10, ' '), sep="\t")
+    def _print_table(self, func, cells_description: str = "None",
+                     range_scale: tuple = (40, 100, 10),
+                     range_color: tuple = (3, 37, 1),
+                     col_width: int = 6):
+        print("IMAGE PATH:", self.image_path)
+        print("IMAGE SHAPE AND SIZE:", self.image_array.shape, self.image_array.size)
+        print(f"IMAGE WEIGHT RANGE: {len(self._prepare(range_scale[0], range_color[0]))} - " +
+              f"{len(self._prepare(range_scale[1] - 1, range_color[1] - 1))}", "B")
+        print("ROWS/COLS: SCALE_PERCENT/COLORS_COUNT_FOR_QUANTING")
+        print(f"CELLS: {cells_description}")
+        print(f"{str().ljust(col_width)}{''.join([f"{c}".ljust(col_width) for c in range(*range_color)])}")
+        for scale in range(*range_scale):
+            print(str(scale).ljust(col_width), end="")
+            for colors in range(*range_color):
+                print(f"{func(scale, colors)}".ljust(col_width), end="")
+            print()
 
-        for compressor in compressors:
-            print(compressor.name.rjust(20))
+    @staticmethod
+    def print_line():
+        print("########################################################")
 
-            # Тестирование сжатия
-            print(f"- compress(sec)".rjust(20), end="\t")
-            compress_times = []
-            for weight in self.TEST_DATA_WEIGHTS:
-                # test_data = self._generate_test_data(weight)
-                compress_time = self._test_compress(compressor, data, iterations)
-                compress_times.append(compress_time)
-                print(f"{compress_time:.6f}".rjust(10), end="\t")
-            print(f"\t{float(np.mean(compress_times)):.6f}")
+    def print_data_weight_table(self):
+        def func(input_scale: int, input_colors: int):
+            return len(self._prepare(input_scale, input_colors))
+        self._print_table(func=func, cells_description="WEIGHT in Bytes", col_width=8)
 
-            # Тестирование распаковки
-            print(f"- decompress(sec)".rjust(20), end="\t")
-            decompress_times = []
-            for weight in self.TEST_DATA_WEIGHTS:
-                # test_data = self._generate_test_data(weight)
-                decompress_time = self._test_decompress(compressor, data, iterations)
-                decompress_times.append(decompress_time)
-                print(f"{decompress_time:.6f}".rjust(10), end="\t")
-            print(f"\t{float(np.mean(decompress_times)):.6f}")
+    def print_compress_ratio_table(self, compressor: Compressor):
+        def func(input_scale: int, input_colors: int):
+            prepared = self._prepare(input_scale, input_colors)
+            return f"{int(self._get_compress_ratio(compressor, prepared) * 100)}"
+        print(f"COMPRESSOR: {compressor.name}")
+        self._print_table(func=func, cells_description="compress ratio in %", col_width=6)
 
-            # Тестирование коэффициента сжатия
-            print(f"- compress_ratio".rjust(20), end="\t")
-            compress_ratios = []
-            for weight in self.TEST_DATA_WEIGHTS:
-                # test_data = self._generate_test_data(weight)
-                compress_ratio = self._get_compress_ratio(compressor, data)
-                compress_ratios.append(compress_ratio)
-                print(f"{compress_ratio:.6f}".rjust(10), end="\t")
-            print(f"\t{float(np.mean(compress_ratios)):.6f}")
+    def print_compress_time_table(self, compressor: Compressor):
+        def func(input_scale: int, input_colors: int):
+            prepared = self._prepare(input_scale, input_colors)
+            compress_time = self._test_compress(compressor, prepared, 1)
+            return f"{int(compress_time * 1000)}"
+        print(f"COMPRESSOR: {compressor.name}")
+        self._print_table(func=func, cells_description="compression time in ms", col_width=6)
+
+    def print_decompress_time_table(self, compressor: Compressor):
+        def func(input_scale: int, input_colors: int):
+            prepared = compressor.compress(self._prepare(input_scale, input_colors))
+            decompress_time = self._test_decompress(compressor, prepared, 1)
+            return f"{int(decompress_time * 1000)}"
+        print(f"COMPRESSOR: {compressor.name}")
+        self._print_table(func=func, cells_description="decompression time in ms", col_width=8)
+
+    def print_compress_ratio_comparison_table(self, compressor1: Compressor, compressor2: Compressor):
+        def func(input_scale: int, input_colors: int):
+            prepared = self._prepare(input_scale, input_colors)
+            ratio1 = self._get_compress_ratio(compressor1, prepared)
+            ratio2 = self._get_compress_ratio(compressor2, prepared)
+            if ratio1 < 0.01 and ratio2 < 0.01:
+                ratio = 1
+            elif not ratio2 > 0:
+                ratio = inf
+            else:
+                ratio = ratio1 / ratio2
+            return f"{ratio:.1f}"
+        print(f"COMPRESSOR1: {compressor1.name}, COMPRESSOR2: {compressor2.name}")
+        self._print_table(func=func, cells_description="ratio = compress_1_ratio / compress_2_ratio", col_width=6)
+
+    def print_compress_time_comparison_table(self, compressor1: Compressor, compressor2: Compressor):
+        def func(input_scale: int, input_colors: int):
+            prepared = self._prepare(input_scale, input_colors)
+            time1 = self._test_compress(compressor1, prepared, 1)
+            time2 = self._test_compress(compressor2, prepared, 2)
+            if time1 < 0.01 and time2 < 0.01:
+                ratio = 1
+            elif not time2 > 0:
+                ratio = inf
+            else:
+                ratio = time1 / time2
+            return f"{ratio:.1f}"
+        print(f"COMPRESSOR1: {compressor1.name}, COMPRESSOR2: {compressor2.name}")
+        self._print_table(func=func, cells_description="ratio = compress_1_time / compress_2_time", col_width=6)
 
 
 if __name__ == "__main__":
-    from basic.image.compression.base_compressors import *
+    # for img_name in ["a2.png", "a3.png", "a4.png", "a5.png", "a6.png", "a7.png", "a8.png", "a9.png", "a10.png",
+    #                  "g1.png", "g2.png"]:
+    #     benchmark = CompressorBenchmark(Path(__file__).parent.parent.parent / "data" / img_name)
+    #     benchmark.print_line()
+    #     benchmark.print_data_weight_table()
+    #     benchmark.print_compress_ratio_table(BZ2Compressor())
+    #     benchmark.print_compress_time_table(BZ2Compressor())
+    #     benchmark.print_decompress_time_table(BZ2Compressor())
+    #     benchmark.print_compress_time_comparison_table(BZ2Compressor(), ZlibCompressor())
+    #     benchmark.print_compress_time_comparison_table(BZ2Compressor(), LZMACompressor())
 
-    from PIL import Image
-    from basic.image.__all_tools import *
-    img_path = Path(__file__).parent.parent.parent / "data" / "g1.png"
-    original_img = Image.open(img_path)
-    img_array = np.array(original_img, dtype=np.uint8)
-    quantizer = GrayQuantizer(8)
-    packer = CombPacker(quantizer.bits_per_color)
-    test_data = packer.pack_array(quantizer.quantize(img_array))
-    # packer = CombPacker(8)
-    # test_data = packer.pack_array(img_array)
+    # benchmark = CompressorBenchmark(Path(__file__).parent.parent.parent / "data" / "a7.png")
+    # benchmark.print_compress_time_table(BZ2Compressor())
+    # benchmark.print_compress_time_table(ZlibCompressor())
+    # benchmark.print_compress_time_table(LZMACompressor())
+    # benchmark.print_compress_ratio_table(BZ2Compressor())
+    # benchmark.print_compress_ratio_table(ZlibCompressor())
+    # benchmark.print_compress_ratio_table(LZMACompressor())
 
-    tester = CompressorBenchmark()
-    tester.test([Adapti, MultiCompressor(), ChunkWrapper(LZMACompressor()), ChunkWrapper(BZ2Compressor()), ChunkWrapper(ZlibCompressor()),
-                 LZMACompressor(), BZ2Compressor(), ZlibCompressor()], test_data, 5)
-
-"""
-iterations=10, test_data: 504 KB = 517116 B
-      ZlibCompressor
-       compress(sec)	  0.196457	  0.194119	  0.194369	  0.193847	  0.193428	  0.193910		0.194355
-     decompress(sec)	  0.001604	  0.001552	  0.001551	  0.001577	  0.001621	  0.001606		0.001585
-      compress_ratio	  0.089674	  0.089674	  0.089674	  0.089674	  0.089674	  0.089674		0.089674
-      LZMACompressor
-       compress(sec)	  0.195815	  0.192732	  0.190319	  0.191532	  0.192732	  0.191966		0.192516
-     decompress(sec)	  0.005374	  0.005494	  0.005470	  0.005412	  0.005444	  0.005421		0.005436
-      compress_ratio	  0.073129	  0.073129	  0.073129	  0.073129	  0.073129	  0.073129		0.073129
-       BZ2Compressor
-       compress(sec)	  0.015836	  0.015817	  0.015826	  0.015868	  0.015750	  0.015749		0.015808
-     decompress(sec)	  0.007488	  0.007397	  0.007475	  0.007400	  0.007514	  0.007272		0.007424
-      compress_ratio	  0.079143	  0.079143	  0.079143	  0.079143	  0.079143	  0.079143		0.079143
-      GzipCompressor
-       compress(sec)	  0.194084	  0.193827	  0.195080	  0.194533	  0.196087	  0.193671		0.194547
-     decompress(sec)	  0.001706	  0.001706	  0.001704	  0.001704	  0.001706	  0.001657		0.001697
-      compress_ratio	  0.089697	  0.089697	  0.089697	  0.089697	  0.089697	  0.089697		0.089697
-
-iterations=10, test_data: 8079 KB = 8273779 B
-      ZlibCompressor
-       compress(sec)	  0.362514	  0.358445	  0.357936	  0.359514	  0.357814	  0.346476		0.357117
-     decompress(sec)	  0.029311	  0.029655	  0.028964	  0.028483	  0.028938	  0.030422		0.029296
-      compress_ratio	  0.096584	  0.096584	  0.096584	  0.096584	  0.096584	  0.096584		0.096584
-      LZMACompressor
-       compress(sec)	  1.272463	  1.248255	  1.241261	  1.254762	  1.244030	  1.261881		1.253775
-     decompress(sec)	  0.091661	  0.088680	  0.090671	  0.088429	  0.088293	  0.087660		0.089232
-      compress_ratio	  0.059825	  0.059825	  0.059825	  0.059825	  0.059825	  0.059825		0.059825
-       BZ2Compressor
-       compress(sec)	  3.094016	  3.169658	  3.117835	  3.165758	  3.086790	  3.224848		3.143151
-     decompress(sec)	  0.261368	  0.257313	  0.258620	  0.267212	  0.257282	  0.261096		0.260482
-      compress_ratio	  0.076172	  0.076172	  0.076172	  0.076172	  0.076172	  0.076172		0.076172
-      GzipCompressor
-       compress(sec)	  0.378693	  0.382890	  0.374867	  0.376103	  0.378387	  0.378712		0.378275
-     decompress(sec)	  0.034290	  0.033767	  0.032073	  0.033554	  0.033330	  0.032337		0.033225
-      compress_ratio	  0.096585	  0.096585	  0.096585	  0.096585	  0.096585	  0.096585		0.096585
-
-256 MB
-bz2 compress 79.99023222923279
-bz2 decompress 5.219536066055298
-10 KB
-lzma compress 12.713189363479614
-lzma decompress 1.9897534847259521
-38 KB
-zlib compress 3.7556722164154053
-zlib decompress 0.733863115310669
-382 KB
-"""
+    benchmark = CompressorBenchmark(Path(__file__).parent.parent.parent / "data" / "a7.png")
+    print(benchmark._test_compress(BZ2Compressor(), benchmark._prepare(60, 4), 1))
+    print(benchmark._test_compress(ThreadCompressor(), benchmark._prepare(60, 4), 1))

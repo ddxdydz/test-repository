@@ -1,24 +1,25 @@
 import threading
 from math import ceil
+from typing import List, Optional
 
 from basic.image.compression.base_compressors import *
 
 
-class MultiCompressor(Compressor):
-    # MAX_CHUNK_LENGTH = 16384
-    # MIN_CHUNK_LENGTH = 256
-    # OPTIMAL_CHUNK_COUNT = 8
+class ThreadCombCompressor(Compressor):
+    BYTES_PER_CHUNK_COUNT = 1
+    BYTES_PER_CHUNK_LENGTH = 4
+    BYTES_PER_CHUNK_INDEX = 1
+
     MAX_CHUNK_LENGTH = 16384
     MIN_CHUNK_LENGTH = 256
     OPTIMAL_CHUNK_COUNT = 14
 
-    BYTES_PER_CHUNK_COUNT = 1
-    BYTES_PER_CHUNK_LENGTH = 4
-    BYTES_PER_DATA_LENGTH = 4
-
-    def __init__(self):
+    def __init__(self, compressors: Optional[List[Compressor]] = None):
         super().__init__()
-        self.tools = [BZ2Compressor(), ZlibCompressor()]
+        if compressors is None:
+            self.compressors = [BZ2Compressor(), ZlibCompressor()]
+        else:
+            self.compressors = compressors
 
     @classmethod
     def _calculate_chunk_count(cls, data_length: int) -> int:
@@ -45,10 +46,11 @@ class MultiCompressor(Compressor):
         nearest_uncompleted_task_index = 0
         uncompleted_task_count = chunk_count
         result_list = [None] * chunk_count  # Фиксированный размер для правильного порядка
+        tool_index_list = [0] * chunk_count
 
         lock = threading.Lock()
 
-        def worker(compressor: Compressor):
+        def worker(compressor: Compressor, index):
             nonlocal nearest_uncompleted_task_index, uncompleted_task_count
             while True:
                 # Фиксация задачи
@@ -72,34 +74,57 @@ class MultiCompressor(Compressor):
                         nearest_uncompleted_task_index += 1
                         uncompleted_task_count -= 1
                         result_list[task_index] = result
+                        tool_index_list[task_index] = index
 
         workers = []
-        for tool in self.tools:
-            worker_thread = threading.Thread(target=worker, args=(tool,))
+        tool_index = 0
+        for tool in self.compressors:
+            worker_thread = threading.Thread(target=worker, args=(tool, tool_index))
             workers.append(worker_thread)
             worker_thread.start()
+            tool_index += 1
 
         for worker_thread in workers:
             worker_thread.join()
 
-        # Проверяем, что все задачи выполнены
         if None in result_list:
             raise RuntimeError("Not all chunks were compressed")
 
-        # Сборка результата
-        # header = chunk_count.to_bytes(self.BYTES_PER_CHUNK_COUNT, 'big')
-        # header += chunk_length.to_bytes(self.BYTES_PER_CHUNK_LENGTH, 'big')
-        # header += len(data).to_bytes(self.BYTES_PER_DATA_LENGTH, 'big')
+        header_chunk_count = chunk_count.to_bytes(self.BYTES_PER_CHUNK_COUNT, 'big')
+        indexes_info = b''.join(
+            i.to_bytes(self.BYTES_PER_CHUNK_INDEX, 'big') for i in tool_index_list
+        )
+        chunks_length_info = b''.join(
+            len(chunk).to_bytes(self.BYTES_PER_CHUNK_LENGTH, 'big') for chunk in result_list
+        )
 
-        # Добавляем размеры каждого сжатого чанка
-        # compressed_chunks = result_list
-        # chunks_info = b''.join(
-        #     [len(chunk).to_bytes(4, 'big') for chunk in compressed_chunks]
-        # )
-
-        # return header + chunks_info + b''.join(compressed_chunks)
-        return b''.join(result_list)
+        return header_chunk_count + indexes_info + chunks_length_info + b''.join(result_list)
 
     def decompress(self, compressed_data: bytes) -> bytes:
+        if not compressed_data:
+            return b''
 
-        return compressed_data
+        chunk_count = int.from_bytes(compressed_data[:self.BYTES_PER_CHUNK_COUNT], 'big')
+        offset = self.BYTES_PER_CHUNK_COUNT
+
+        compressors_indexes = []
+        for _ in range(chunk_count):
+            compressor_index = int.from_bytes(compressed_data[offset:offset + self.BYTES_PER_CHUNK_INDEX], 'big')
+            compressors_indexes.append(compressor_index)
+            offset += self.BYTES_PER_CHUNK_INDEX
+
+        chunk_lengths = []
+        for _ in range(chunk_count):
+            chunk_length = int.from_bytes(compressed_data[offset:offset + self.BYTES_PER_CHUNK_LENGTH], 'big')
+            chunk_lengths.append(chunk_length)
+            offset += self.BYTES_PER_CHUNK_LENGTH
+
+        decompressed_chunks = []
+        for i in range(chunk_count):
+            compressor_index = compressors_indexes[i]
+            chunk_length = chunk_lengths[i]
+            chunk_data = compressed_data[offset:offset + chunk_length]
+            decompressed_chunks.append(self.compressors[compressor_index].decompress(chunk_data))
+            offset += chunk_length
+
+        return b''.join(decompressed_chunks)

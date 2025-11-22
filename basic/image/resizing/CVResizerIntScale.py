@@ -6,7 +6,6 @@ from basic.image.resizing.CVResizer import CVResizer
 
 class CVResizerIntScale(CVResizer):
     """Версия с использованием 1 < scale_percent: int <= 100 вместо scale:float >= 0"""
-
     def __init__(self, scale_percent: int = 60, method: ResizeMethod | int = ResizeMethod.BICUBIC,
                  original_size: tuple[int, int] | None = None):
         self.scale_percent = self._get_validated_scale_percent(scale_percent)
@@ -18,12 +17,18 @@ class CVResizerIntScale(CVResizer):
             raise ValueError(f"Error in ImageResizer: Scale percent must be between 1 and 100")
         return scale_percent
 
-    def reset_scale_percent(self, scale_percent: int) -> None:
+    def set_scale_percent(self, scale_percent: int) -> None:
         """Установить новый коэффициент масштабирования в процентах"""
         self.scale_percent = self._get_validated_scale_percent(scale_percent)
-        self.reset_scale(self.scale_percent / 100)
+        self.set_scale(self.scale_percent / 100)
 
-    def get_parameters_int(self) -> Tuple[Optional[Tuple[int, int]], int, int]:
+    def get_parameters_int(self) -> Tuple[int, int, int, int]:
         """Получить текущие параметры масштабирования"""
-        return self.original_size, self.scale_percent, self.method.get_index()
+        width, height = self.original_size
+        return width, height, self.scale_percent, self.method.get_index()
 
+    def set_parameters_int(self, width: int, height: int, scale_percent: int, method: int) -> None:
+        """Установить параметры масштабирования"""
+        self.set_method(method)
+        self.set_scale_percent(scale_percent)
+        self.set_original_size((width, height))

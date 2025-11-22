@@ -17,16 +17,16 @@ class ResizerBenchmark:
     @staticmethod
     def save_resized_images(resizer: ImageResizer, img_path: Path, scale=None):
         if scale is not None:
-            resizer.reset_scale(scale)
+            resizer.set_scale(scale)
 
         Image.open(img_path).save(f"{ResizerBenchmark.TEMP_PATH}\\0{img_path.name[img_path.name.rfind("."):]}")
         array = np.array(Image.open(img_path), dtype=np.uint8)
 
-        resizer.reset_original_size((array.shape[1], array.shape[0]))
+        resizer.set_original_size((array.shape[1], array.shape[0]))
 
         for i in range(len(ResizerBenchmark.METHODS)):
             method = ResizerBenchmark.METHODS[i]
-            resizer.reset_method(method)
+            resizer.set_method(method)
             res_img = Image.fromarray(resizer.desize(resizer.resize(array)))
             res_img.save(
                 f"{ResizerBenchmark.TEMP_PATH}\\{i + 1} {method.name}{img_path.name[img_path.name.rfind("."):]}")
@@ -59,7 +59,7 @@ class ResizerBenchmark:
         print(str().rjust(20), *[str(m.name).rjust(10, ' ') for m in ResizerBenchmark.METHODS], sep="\t")
 
         for resizer in resizers:
-            resizer.reset_original_size((img_array.shape[1], img_array.shape[0]))
+            resizer.set_original_size((img_array.shape[1], img_array.shape[0]))
 
             print(f"{resizer.name}   ".rjust(20))
 
@@ -67,7 +67,7 @@ class ResizerBenchmark:
             print(f"resize(sec)".rjust(20), end="\t")
             resize_times = []
             for method in ResizerBenchmark.METHODS:
-                resizer.reset_method(method)
+                resizer.set_method(method)
                 resize_time = ResizerBenchmark._test_resize(resizer, img_array, iterations)
                 resize_times.append(resize_time)
                 print(f"{resize_time:.6f}".rjust(10), end="\t")
@@ -77,7 +77,7 @@ class ResizerBenchmark:
             print(f"desize(sec)".rjust(20), end="\t")
             desize_times = []
             for method in ResizerBenchmark.METHODS:
-                resizer.reset_method(method)
+                resizer.set_method(method)
                 desize_time = ResizerBenchmark._test_desize(resizer, img_array, iterations)
                 desize_times.append(desize_time)
                 print(f"{desize_time:.6f}".rjust(10), end="\t")

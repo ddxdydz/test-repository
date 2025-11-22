@@ -142,9 +142,10 @@ if __name__ == "__main__":
     from basic.image.packing.ShiftPacker import ShiftPacker
     from basic.image.packing.NumbaPacker import NumbaPacker
     from basic.image.packing.CombPacker import CombPacker
+    from basic.image.packing.NoTampingPacker import NoTampingPacker
 
     tester = PackerBenchmark()
-    tester.test([CombPacker(), ShiftPacker(), NumbaPacker()], iterations=200)
+    tester.test([NoTampingPacker(), CombPacker(), ShiftPacker(), NumbaPacker()], iterations=200)
 
 """
 960000 (1200, 800, 1)

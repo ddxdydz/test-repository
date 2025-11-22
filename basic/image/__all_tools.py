@@ -2,10 +2,11 @@ from basic.image.quanting.GrayQuantizer import GrayQuantizer
 from basic.image.quanting.RGBQuantizer import RGBQuantizer
 from basic.image.quanting.CombQuantizer import CombQuantizer
 from basic.image.packing.CombPacker import CombPacker
+from basic.image.packing.NoTampingPacker import NoTampingPacker
 from basic.image.resizing.CVResizer import CVResizer
 from basic.image.resizing.CVResizerIntScale import CVResizerIntScale
 from basic.image.compression.base_compressors import *
-from basic.image.compression.ChunkWrapper import ChunkWrapper
-from basic.image.compression.MultiCompressor import MultiCompressor
+from basic.image.compression.ThreadCombCompressor import ThreadCombCompressor
+from basic.image.compression.ThreadCompressor import ThreadCompressor
 from basic.image.compression.AdaptiveCompressor import AdaptiveCompressor
-from basic.image.compression.TryCompressor import TryCompressor
+from basic.image.compression.CompetitionCompressor import CompetitionCompressor

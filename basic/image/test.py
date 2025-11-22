@@ -1,23 +1,32 @@
 from pathlib import Path
 from time import time
 
+import mss
 import numpy as np
+import pyautogui
 from PIL import Image
-
+import cv2
 from basic.image.__all_tools import *
 
 # LZMA не используется, всегда самый медленный
 
-img_path = Path(__file__).parent / "data" / "a9.png"  # не влияет, влияют только scale и colors
-resizer = CVResizerIntScale(50)  # чем больше, тем дольше BZ2
-quantizer = GrayQuantizer(7)  # чем больше, тем быстрее BZ2 (в разы), только для Gray
+img_path = Path(__file__).parent / "data" / "a8.png"
+resizer = CVResizerIntScale(60)
+quantizer = GrayQuantizer(3)
 # quantizer = CombQuantizer(8)
-packer = CombPacker(quantizer.bits_per_color)
+packer = NoTampingPacker(quantizer.bits_per_color)
 
-image = Image.open(img_path)
 _start_time = time()
-img_array = np.array(image, dtype=np.uint8)
-print("opened".ljust(20), f"{time() - _start_time:.6f}")
+image = Image.open(img_path).convert("RGB")
+# image = pyautogui.screenshot()
+# with mss.mss() as sct:
+#     image = sct.grab(sct.monitors[1])
+print("Image.open".ljust(20), f"{time() - _start_time:.6f}")
+_start_time = time()
+# img_array = cv2.imread(img_path)
+img_array = np.asarray(image, dtype=np.uint8)
+# img_array = np.array(screenshot)
+print("np.array".ljust(20), f"{time() - _start_time:.6f}")
 _start_time = time()
 resized = resizer.resize(img_array)
 print("resized".ljust(20), f"{time() - _start_time:.6f}")
@@ -29,19 +38,16 @@ packed = packer.pack_array(quantized)
 print("packed".ljust(20), f"{time() - _start_time:.6f}")
 
 _start_time = time()
-compressor = BZ2Compressor()  # нестабильный, иногда самый быстрый (v9, 0.9, 3)
+compressor = BZ2Compressor()
 compressed = compressor.compress(packed)
 print(f"{compressor.name}".ljust(30),
       f"{time() - _start_time:.6f}", len(compressed) // 1024, "KB", len(compressed), "B")
-"""
-CW(BZ2Compressor)              0.005699 10 KB 10347 B
-CW(ZlibCompressor)             0.010401 9 KB 9506 B
-"""
-_start_time = time()
-compressor = ZlibCompressor()  # стабильней, часто самый быстрый  (v9, 0.5, 7), всегда лучшая сжимаемость
-compressed = compressor.compress(packed)
-print(f"{compressor.name}".ljust(30),
-      f"{time() - _start_time:.6f}", len(compressed) // 1024, "KB", len(compressed), "B")
+
+# _start_time = time()
+# compressor = ThreadCompressor()
+# compressed = compressor.compress(packed)
+# print(f"{compressor.name}".ljust(30),
+#       f"{time() - _start_time:.6f}", len(compressed) // 1024, "KB", len(compressed), "B")
 
 _start_time = time()
 decompressed = compressor.decompress(compressed)
@@ -56,4 +62,4 @@ _start_time = time()
 desized = resizer.desize(dequantized)
 print("desized".ljust(20), f"{time() - _start_time:.6f}")
 
-# Image.fromarray(desized).show()
+Image.fromarray(desized).show()

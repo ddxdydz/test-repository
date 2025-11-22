@@ -37,10 +37,10 @@ class ImageResizer(ABC):
     def __init__(self, scale: float, method: ResizeMethod | int, original_size: Optional[Tuple[int, int]]):
         self.name = self.__class__.__name__
         self.scale = self._get_validated_scale(scale)
+        self.method = self._get_validated_method(method)
         self.original_size = None
         self.target_size = None
-        self.reset_original_size(original_size)
-        self.method = self._get_validated_method(method)
+        self.set_original_size(original_size)
 
     @staticmethod
     def _calculate_target_size(original_size: Tuple[int, int], scale: float) -> Tuple[int, int]:
@@ -72,7 +72,7 @@ class ImageResizer(ABC):
         else:
             raise TypeError(f"Error in ImageResizer: Method must be ResizeMethod or int, got {type(method)}")
 
-    def reset_original_size(self, original_size: Tuple[int, int] | None) -> None:
+    def set_original_size(self, original_size: Tuple[int, int] | None) -> None:
         """Установить новый исходный размер и пересчитать целевой размер"""
         if original_size is None:
             self.original_size = None
@@ -81,20 +81,20 @@ class ImageResizer(ABC):
             self.original_size = self._get_validated_size(original_size)
             self.target_size = self._calculate_target_size(original_size, self.scale)
 
-    def reset_scale(self, scale: float) -> None:
+    def set_scale(self, scale: float) -> None:
         """Установить новый коэффициент масштабирования"""
         self.scale = self._get_validated_scale(scale)
         if self.original_size is not None:
             self.target_size = self._calculate_target_size(self.original_size, self.scale)
 
-    def reset_method(self, method: ResizeMethod | int) -> ResizeMethod:
+    def set_method(self, method: ResizeMethod | int) -> ResizeMethod:
         """Установить новый метод масштабирования"""
         self.method = self._get_validated_method(method)
         return self.method
 
     def get_parameters(self) -> Tuple[Optional[Tuple[int, int]], float, int]:
         """Получить текущие параметры масштабирования"""
-        return self.original_size, self.scale, self.method.get_index()
+        return *self.original_size, self.scale, self.method.get_index()
 
     @abstractmethod
     def _basic_resize(self, image: np.array, target_size: Tuple[int, int]) -> np.array:

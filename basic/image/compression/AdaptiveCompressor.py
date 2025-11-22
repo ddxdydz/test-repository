@@ -1,17 +1,19 @@
-from time import perf_counter
+from time import time
 from basic.image.compression.base_compressors import *
 
 
 class AdaptiveCompressor(Compressor):
     """Компрессор с адаптивным выбором алгоритма сжатия."""
+    BYTES_PER_INDEX = 1
 
     TEST_DATA_SIZE = 1024  # Размер тестовых данных
-    MIN_DATA_FOR_TESTING = TEST_DATA_SIZE * 2  # Минимальный размер для тестирования
+    MIN_DATA_FOR_TESTING = TEST_DATA_SIZE * 16  # Минимальный размер для тестирования
+
+    TEST_PART = 0.2
 
     def __init__(self):
         super().__init__()
         self.compressors = [BZ2Compressor(), ZlibCompressor()]
-        self._last_choice = 0  # Для отслеживания выбора
 
     def _select_test_data(self, data: bytes) -> bytes:
         """Выбирает репрезентативные данные для тестирования."""
@@ -26,59 +28,31 @@ class AdaptiveCompressor(Compressor):
 
         return start_chunk + middle_chunk + end_chunk
 
-    def _benchmark_compressors(self, test_data: bytes) -> int:
-        """Сравнивает компрессоры и возвращает индекс лучшего."""
-        best_compressor_idx = 0
-        best_score = float('inf')
-
-        for i, compressor in enumerate(self.compressors):
-            try:
-                start_time = perf_counter()
-                compressed = compressor.compress(test_data)
-                compression_time = perf_counter() - start_time
-
-                # Оценка: учитываем и скорость, и эффективность сжатия
-                compression_ratio = len(compressed) / len(test_data)
-
-                # Комбинированная оценка (можно настроить веса)
-                score = compression_ratio * 0.7 + compression_time * 0.3
-
-                if score < best_score:
-                    best_score = score
-                    best_compressor_idx = i
-
-            except Exception:
-                # Если компрессор не справился, пробуем следующий
-                continue
-
-        return best_compressor_idx
-
     def compress(self, data: bytes) -> bytes:
         if not data:
             return b''
 
-        # Для маленьких данных используем компрессор по умолчанию
         if len(data) < self.MIN_DATA_FOR_TESTING:
-            compressed = self.compressors[0].compress(data)
-            self._last_choice = 0
-            return compressed
+            return self.compressors[0].compress(data)
 
-        # Выбираем лучший компрессор на основе тестовых данных
-        test_data = self._select_test_data(data)
-        best_compressor_idx = self._benchmark_compressors(test_data)
+        # data_for_test = self._select_test_data_by_part(data)
 
-        # Используем выбранный компрессор для всех данных
-        compressed = self.compressors[best_compressor_idx].compress(data)
-        self._last_choice = best_compressor_idx
+        step = int(len(data) // len(data) * self.TEST_PART)
+        if step < 4:
+            return self.compressors[0].compress(data)
+        data_for_test = data[::step]
 
-        return compressed
+        time_results = []
+        for compressor in self.compressors:
+            _start_time = time()
+            compressor.compress(data_for_test)
+            time_results.append(time() - _start_time)
+        chosen_compressor_index = min(range(len(self.compressors)), key=lambda i: time_results[i])
 
-    def get_compressor_info(self) -> dict:
-        """Возвращает информацию о последнем использованном компрессоре."""
-        return {
-            'chosen_compressor': self._last_choice,
-            'available_compressors': [type(comp).__name__ for comp in self.compressors]
-        }
+        header = chosen_compressor_index.to_bytes(self.BYTES_PER_INDEX, 'big')
+
+        return header + self.compressors[chosen_compressor_index].compress(data)
 
     def decompress(self, compressed_data: bytes) -> bytes:
-        return b''
+        chosen_compressor_index = int.from_bytes(compressed_data[:self.BYTES_PER_INDEX], 'big')
+        return self.compressors[chosen_compressor_index].compress(compressed_data[self.BYTES_PER_INDEX:])
