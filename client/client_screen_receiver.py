@@ -4,7 +4,7 @@ from time import time, strftime, gmtime
 from PIL import Image
 
 from alegacy.image.ImageCompressor import ImageCompressor
-from server.support.tools import recv_with_header_size
+from basic.network.SocketTransceiver import recv_with_header_size
 
 
 class ScreenReceiverClient:

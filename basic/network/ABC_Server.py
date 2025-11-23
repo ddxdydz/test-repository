@@ -7,6 +7,7 @@ import pyautogui
 
 class Server(ABC):
     def __init__(self, host='0.0.0.0', port=0):
+        self.name = self.__class__.__name__
         self.host = host
         self.port = port
         self.clients = []
@@ -24,57 +25,57 @@ class Server(ABC):
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
 
     @staticmethod
-    def get_network_info() -> str:
+    def get_external_ip() -> str:
         try:
             with urllib.request.urlopen('https://api.ipify.org', timeout=5) as response:
                 external_ip = response.read().decode('utf-8')
                 return external_ip
         except Exception as e:
-            print(f"get_network_info(): {e}")
+            print(f"get_external_ip(): {e}")
             return '-'
 
     @staticmethod
-    def get_info(server_socket, name="Server"):
+    def get_network_info(server_socket, name="Server"):
         return f"* {name} started: {server_socket.getsockname()}" + \
             f"\n* Local IP: {socket.gethostbyname(socket.gethostname())}" + \
-            f"\n* External IP: {Server.get_network_info()}"
+            f"\n* External IP: {Server.get_external_ip()}"
 
     def start(self):
         self.running = True
         try:
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(1)
-            print(self.get_info(self.server_socket, self.__class__.__name__))
+            print(self.get_network_info(self.server_socket, self.name))
             while True:
-                print(f"Server.py: Waiting for client connection ({self.server_socket.getsockname()[1]})...")
+                print(f"{self.name}: Waiting for client connection ({self.server_socket.getsockname()[1]})...")
                 client_socket, address = self.server_socket.accept()
                 self.handle_client(client_socket, address)
         except Exception as e:
-            print(f"Server.py: Ошибка сервера: {e}")
+            print(f"{self.name}: Ошибка сервера: {e}")
         finally:
-            print("Server.py: socket closed.")
+            print(f"{self.name}: socket closed.")
             self.server_socket.close()
 
     def stop(self):
-        print("Server.py: stop.")
+        print(f"{self.name}: stopped.")
         self.running = False
         for client in self.clients:
             client.close()
 
     def handle_client(self, client_socket, address):
         try:
-            print(f"Client connected: {address}")
+            print(f"{self.name}: Client connected: {address}")
             self.clients.append(client_socket)
             if address[0] not in self.allowed_hosts:
-                print("Address not in allowed_hosts.")
+                print(f"{self.name}: Address not in allowed_hosts.")
             else:
-                print("Start client loop.")
+                print(f"{self.name}: Start client loop.")
                 self.client_loop(client_socket, address)
         except Exception as e:
-            print(f"Client error {address}: {e}")
+            print(f"{self.name}: Client error {address}: {e}")
         finally:
             self.clients.remove(client_socket)
-            print(f"Client {address} connection is terminated.")
+            print(f"{self.name}: Client {address} connection is terminated.")
             client_socket.close()
 
     @abstractmethod

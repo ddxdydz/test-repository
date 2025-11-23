@@ -4,8 +4,8 @@ from enum import Enum
 import pyautogui
 
 from support.Key import Key
-from support.Server import Server
-from support.tools import recv_all
+from basic.network.Server import Server
+from basic.network.SocketTransceiver import recv_all
 
 
 class Action(Enum):  # 16 действий максимум
