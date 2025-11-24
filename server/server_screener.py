@@ -1,4 +1,5 @@
 import socket
+from typing import Tuple
 
 import pyautogui
 
@@ -12,15 +13,13 @@ from basic.network.time_ms import time_ms
 class ServerScreener(Server):
     SOCKET_TIMEOUT = 10
 
-    def __init__(self, host='0.0.0.0', port=0):
+    def __init__(self, host='0.0.0.0', port=8888):
         super().__init__(host, port)
         self.name = self.__class__.__name__
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
 
-    def client_loop(self, client_socket, address):
-        socket_transceiver = SocketTransceiver(client_socket)
-        socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
+    def init_tools_manager(self, socket_transceiver: SocketTransceiver) -> ToolsManager:
         try:
             # Отправка параметров экрана
             screen_width, screen_height = pyautogui.size()
@@ -29,11 +28,33 @@ class ServerScreener(Server):
             # Получение параметров выходного изображения
             colors = int.from_bytes(socket_transceiver.recv_raw(COLORS_SIZE))
             scale_percent = int.from_bytes(socket_transceiver.recv_raw(SCALE_PERCENT_SIZE))
+            return ToolsManager(screen_width, screen_height, colors, scale_percent)
         except SocketTransceiverError as e:
             print(f"{self.name}: {e}")
             socket_transceiver.close()
-            return
-        tools_manager = ToolsManager(screen_width, screen_height, colors, scale_percent)
+            raise e
+
+    @staticmethod
+    def prepare_data_to_send(loop_index: int, tools_manager: ToolsManager) -> Tuple[int, bytes]:
+        _screenshotted_time_ms = time_ms()
+        stats, difference, data = tools_manager.encode_image()
+        tools_manager.apply_difference(difference)
+        cursor_x, cursor_y = pyautogui.position()
+        _encoded_time_ms = time_ms()
+        data_to_send_list = [
+            loop_index.to_bytes(SCREEN_INDEX_SIZE, 'big'),
+            _screenshotted_time_ms.to_bytes(SCREEN_TIME_SIZE, 'big'),
+            _encoded_time_ms.to_bytes(SCREEN_TIME_SIZE, 'big'),
+            cursor_x.to_bytes(SCREEN_CURSOR_X_SIZE, 'big'),
+            cursor_y.to_bytes(SCREEN_CURSOR_Y_SIZE, 'big'),
+            data
+        ]
+        return _encoded_time_ms - _screenshotted_time_ms, b''.join(data_to_send_list)
+
+    def client_loop(self, client_socket, address):
+        socket_transceiver = SocketTransceiver(client_socket)
+        socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
+        tools_manager = self.init_tools_manager(socket_transceiver)
         print(f"{self.name}: {tools_manager} is created!")
         print(f"{self.name}: start client_loop.")
         try:
@@ -42,38 +63,25 @@ class ServerScreener(Server):
                 index += 1
                 index_str = f"{index}: "
                 align = "".ljust(len(index_str))
+
                 # Request waiting
                 print(f"{index_str}{time_ms()} 0: waiting for sending request...")
                 socket_transceiver.set_timeout(None)
                 socket_transceiver.recv_raw(1)  # Ожидание запроса на отправку скриншота
                 socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
+
                 # Screen encoding
                 print(f"{align}{time_ms()} 2: request is received, start encoding...")
-                screen_time_in_ms = time_ms()
-                stats, difference, data = tools_manager.encode_image()
-                encoding_time = stats["total_time"]
-                applying_time, _ = tools_manager.apply_difference(difference)
-                encoding_time += applying_time
-                cursor_x, cursor_y = pyautogui.position()
-                print(f"{align}{time_ms()} 3: screen is encoded for {time_ms(encoding_time)} ms!")
+                _encode_delta_time_ms, data_to_send = self.prepare_data_to_send(index, tools_manager)
+                print(f"{align}{time_ms()} 3: screen is encoded for {_encode_delta_time_ms} ms!")
+
                 # Sending
-                start_sending_time_in_ms = time_ms()
-                print(f"{align}{start_sending_time_in_ms} 4: start sending ({index}, {len(data)} B)...")
-                data_to_send_list = [
-                    index.to_bytes(SCREEN_INDEX_SIZE, 'big'),
-                    screen_time_in_ms.to_bytes(SCREEN_TIME_SIZE, 'big'),
-                    start_sending_time_in_ms.to_bytes(SCREEN_TIME_SIZE, 'big'),
-                    cursor_x.to_bytes(SCREEN_CURSOR_X_SIZE, 'big'),
-                    cursor_y.to_bytes(SCREEN_CURSOR_Y_SIZE, 'big'),
-                    data
-                ]
-                socket_transceiver.send_framed(b''.join(data_to_send_list))
-                print(f"{align}{time_ms()} 5: screen {len(data)} B is sent!")
+                print(f"{align}{time_ms()} 4: start sending {len(data_to_send)} B...")
+                socket_transceiver.send_framed(data_to_send)
+                print(f"{align}{time_ms()} 5: {len(data_to_send)} B is sent!")
         except SocketTransceiverError as e:
-            socket_transceiver.close()
             print(f"{self.name}: {e}")
         except Exception as e:
-            socket_transceiver.close()
             print(f"{self.name}: {e}")
             raise e
         finally:

@@ -17,14 +17,14 @@ class State(Enum):
         return State((self.value + 1) % 3)
 
 
-def get_metrics_str(screen_index, weight, screen_time_in_ms, start_sending_time_in_ms, received_time_in_ms) -> str:
-    server_delay = start_sending_time_in_ms - screen_time_in_ms
-    network_delay = received_time_in_ms - start_sending_time_in_ms
-    decode_delay = time_ms() - received_time_in_ms
-    current_speed = round(weight * 8 / 1024 / (network_delay / 1000), 3) if network_delay != 0 else "-"
+def get_metrics_str(index, screenshotted_time_ms, encoded_time_ms, received_time_ms, size) -> str:
+    server_delay = encoded_time_ms - screenshotted_time_ms
+    network_delay = received_time_ms - encoded_time_ms
+    decode_delay = time_ms() - received_time_ms
+    current_speed = round(size * 8 / 1024 / (network_delay / 1000), 3) if network_delay != 0 else "-"
     str_metrics = [
-        f"{screen_index} = {weight} B",
-        f"delay: {time_ms() - screen_time_in_ms} ms",
+        f"{index} = {size} B",
+        f"delay: {time_ms() - screenshotted_time_ms} ms",
         f"encode: {server_delay} ms",
         f"network: {network_delay} ms",
         f"decode: {decode_delay} ms",
@@ -39,10 +39,10 @@ def process_receiving():
             continue_receiving_event.wait()
             recv = client_screen_receiver.recv_screen()
             receiving_data_to_blit = {
-                "screen_bytes": recv["image_array"].tobytes(),
+                "screen_bytes": recv["data"].tobytes(),
                 "caption": get_metrics_str(
-                    recv["screen_index"], recv["weight"], recv["screen_time_in_ms"],
-                    recv["start_sending_time_in_ms"], recv["received_time_in_ms"]),
+                    recv["index"], recv["screenshotted_time_ms"], recv["encoded_time_ms"],
+                    recv["received_time_ms"], recv["size"]),
                 "cursor_x": recv["cursor_x"],
                 "cursor_y": recv["cursor_y"]
             }
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     FPS = 30
 
     HOSTS = ['localhost', '158.160.182.121', ]
-    PORTS = [2952, 8888]
+    PORTS = [8888, 8000]
     client_screen_receiver = ScreenReceiverClient(HOSTS[0], PORTS[0], 4, 80)
     # client_command_sender = CommandRecorderClient(current_host, port_2)
 

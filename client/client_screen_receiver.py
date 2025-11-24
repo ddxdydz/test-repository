@@ -51,47 +51,43 @@ class ScreenReceiverClient:
         self.index = 0
         return True
 
+    def read_data(self, data: bytes) -> dict:
+        result_dict = dict()
+        result_dict["index"] = self.index = int.from_bytes(data[:SCREEN_INDEX_SIZE], 'big')
+        offset = SCREEN_INDEX_SIZE
+        result_dict["screenshotted_time_ms"] = int.from_bytes(data[offset:offset + SCREEN_TIME_SIZE], 'big')
+        offset += SCREEN_TIME_SIZE
+        result_dict["encoded_time_ms"] = int.from_bytes(data[offset:offset + SCREEN_TIME_SIZE], 'big')
+        offset += SCREEN_TIME_SIZE
+        result_dict["cursor_x"] = int.from_bytes(data[offset:offset + SCREEN_CURSOR_X_SIZE], 'big')
+        offset += SCREEN_CURSOR_X_SIZE
+        result_dict["cursor_y"] = int.from_bytes(data[offset:offset + SCREEN_CURSOR_Y_SIZE], 'big')
+        offset += SCREEN_CURSOR_Y_SIZE
+        result_dict["data"] = data[offset:]
+        result_dict["size"] = len(result_dict["data"])
+        return result_dict
+
     def recv_screen(self) -> Dict:
         self.index += 1
         index_str = f"{self.index}: "
         align = "".ljust(len(index_str))
+
         # Request sending
         self._socket_transceiver.send_raw(b'\x01')
-        send_request_time_in_ms = time_ms()
+
         # Receiving
-        print(f"{index_str}{send_request_time_in_ms} 1: request is sent, waiting to receive...")
-        received_data = self._socket_transceiver.recv_framed()
-        self.index = int.from_bytes(received_data[:SCREEN_INDEX_SIZE], 'big')
-        offset = SCREEN_INDEX_SIZE
-        screen_time_in_ms = int.from_bytes(received_data[offset:offset + SCREEN_TIME_SIZE], 'big')
-        offset += SCREEN_TIME_SIZE
-        start_sending_time_in_ms = int.from_bytes(received_data[offset:offset + SCREEN_TIME_SIZE], 'big')
-        offset += SCREEN_TIME_SIZE
-        cursor_x = int.from_bytes(received_data[offset:offset + SCREEN_CURSOR_X_SIZE], 'big')
-        offset += SCREEN_CURSOR_X_SIZE
-        cursor_y = int.from_bytes(received_data[offset:offset + SCREEN_CURSOR_Y_SIZE], 'big')
-        offset += SCREEN_CURSOR_Y_SIZE
-        data = received_data[offset:]
+        print(f"{index_str}{time_ms()} 1: request is sent, waiting to receive...")
+        result_dict = self.read_data(self._socket_transceiver.recv_framed())
         sleep(0.1)  # задержка сети
-        received_time_in_ms = time_ms()
-        print(f"{align}{received_time_in_ms} 6: screen {len(data)} B is received!")
-        # Screen dencoding
+        result_dict["received_time_ms"] = time_ms()
+        print(f"{align}{time_ms()} 6: screen {result_dict["size"]} B is received!")
+
+        # Screen decoding
         print(f"{align}{time_ms()} 7: start decoding screen{self.index}...")
-        stats, image_array = self.tools_manager.decode_image(data)
+        stats, result_dict["data"] = self.tools_manager.decode_image(result_dict["data"])
         print(f"{align}{time_ms()} 8: screen{self.index} is decoded for {time_ms(stats["total_time"])} ms!")
 
-        result = {
-            "screen_index": self.index,
-            "screen_time_in_ms": screen_time_in_ms,
-            "send_request_time_in_ms": send_request_time_in_ms,
-            "start_sending_time_in_ms": start_sending_time_in_ms,
-            "received_time_in_ms": received_time_in_ms,
-            "weight": len(data),
-            "cursor_x": cursor_x,
-            "cursor_y": cursor_y,
-            "image_array": image_array
-        }
-        return result
+        return result_dict
 
     def close(self):
         self._socket_transceiver.close()
@@ -101,8 +97,8 @@ class ScreenReceiverClient:
 
 
 if __name__ == "__main__":
-    client = ScreenReceiverClient('192.168.56.1', 56468)
+    client = ScreenReceiverClient('192.168.56.1', 8888)
     if client.connect():
-        client.recv_screen()
-        client.recv_screen()
+        print(client.recv_screen())
+        print(client.recv_screen())
     client.close()
