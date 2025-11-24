@@ -86,7 +86,11 @@ class ScreenReceiverClient:
 
         # Screen decoding
         print(f"{align}{time_ms()} 2: start decoding...")
+        basic_size = len(result_dict["data"])
         stats, result_dict["data"] = self.tools_manager.decode_image(result_dict["data"])
+        without_reference_size = len(self.tools_manager.compress(
+            self.tools_manager.pack(self.tools_manager._difference_handler.reference_frame)[-1])[-1])
+        print("!!!!", basic_size, without_reference_size)
         print(f"{align}{time_ms()} 2: screen{self.index} is decoded for {time_ms(stats["total_time"])} ms!")
 
         return result_dict
@@ -102,6 +106,6 @@ if __name__ == "__main__":
     client = ScreenReceiverClient('192.168.56.1', 8888)
     if client.connect():
         client.recv_screen()
-        client.recv_screen()
+        # client.recv_screen()
         # client.show(client.recv_screen()["data"])
     client.close()

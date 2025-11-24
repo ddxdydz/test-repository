@@ -116,6 +116,7 @@ if __name__ == "__main__":
         img_array = np.asarray(image, dtype=np.uint8)
         if len(img_array.shape) == 3 and img_array.shape[2] == 4:
             img_array = img_array[:, :, :3]
+        print(f"##### {image_name} #####")
         print(img_array.shape)
 
         resizer = CVResizerIntScale(scale_percent=60, original_size=(img_array.shape[1], img_array.shape[0]))
@@ -123,28 +124,31 @@ if __name__ == "__main__":
         packer = NoTampingPacker(quantizer.bits_per_color)
         compressor = BZ2Compressor()
 
-        resized = resizer.resize(img_array)
-        quantized = quantizer.quantize(resized)
+        data = resizer.resize(img_array)
 
+        quantized = quantizer.quantize(data)
+        print("quantized size:", len(compressor.compress(packer.pack_array(quantized))), "B")
         _s_time = time()
         diffed = diff_handler.compute_difference(quantized)
         print("diffed", time() - _s_time)
+        print("diffed size:", len(compressor.compress(packer.pack_array(diffed))), "B")
 
-        packed = packer.pack_array(diffed)
-        compressed = compressor.compress(packed)
-        print(len(compressed), "B")
-        decompressed = compressor.decompress(compressed)
-        unpacked = packer.unpack_array(decompressed)
+        data = compressor.decompress(compressor.compress(packer.pack_array(diffed)))
+        data = packer.unpack_array(data)
 
         _s_time = time()
-        dediffed = diff_handler.apply_difference(unpacked)
+        # Image.fromarray(quantizer.dequantize(diff_handler._reference_frame)).show()
+        data = diff_handler.apply_difference(data)
+        # Image.fromarray(quantizer.dequantize(diff_handler._reference_frame)).show()
         print("diffed", time() - _s_time)
 
-        dequantized = quantizer.dequantize(dediffed)
-        desized = resizer.desize(dequantized)
+        data = quantizer.dequantize(data)
+        data = resizer.desize(data)
 
-        print(desized.shape)
-        # Image.fromarray(desized).show()
+        print(data.shape)
+        Image.fromarray(data).show()
+        input()
+
 
 
 """
