@@ -23,8 +23,8 @@ class ToolsManager:
         self._compressor = BZ2Compressor()
         self._difference_handler = GrayscaleDifferenceHandler(colors, scale_percent, shape=(height, width))
 
-    def apply(self, difference: np.ndarray) -> None:
-        self._difference_handler.apply_difference(difference)
+    def update_reference(self, reference: np.ndarray) -> None:
+        self._difference_handler.update_reference(reference)
 
     @staticmethod
     def open(path: Optional[Path] = None):
@@ -112,13 +112,13 @@ class ToolsManager:
         encode_stats["time_to_open"], image_to_encode = self.open(path)
         encode_stats["time_to_convert"], converted = self.convert(image_to_encode)
         encode_stats["time_to_resize"], data = self.resize(converted)
-        encode_stats["time_to_quantize"], data = self.quantize(data)
-        encode_stats["time_to_compute_difference"], difference = self.compute_difference(data)
-        encode_stats["time_to_pack"], data = self.pack(difference)
+        encode_stats["time_to_quantize"], reference = self.quantize(data)
+        encode_stats["time_to_compute_difference"], data = self.compute_difference(reference)
+        encode_stats["time_to_pack"], data = self.pack(data)
         encode_stats["time_to_compress"], compressed = self.compress(data)
         encode_stats["total_time"] = time() - _start_time
         encode_stats["encoded_size"] = len(compressed)
-        return encode_stats, difference, compressed
+        return encode_stats, reference, compressed
 
     def decode_image(self, encoded_difference: bytes) -> Tuple[Dict, np.ndarray]:
         _start_time = time()
@@ -179,8 +179,8 @@ if __name__ == "__main__":
     print(ToolsManager())
     tools_manager = ToolsManager(1279, 719, 3, 60)
     for image_name in ["ch1.jpg", "ch2.jpg", "ch3.jpg", "ch3.jpg"]:
-        stats, diff, encoded = tools_manager.encode_image(Path(__file__).parent / "data" / image_name)
         tools_manager.print_divided_line()
+        stats, diff, encoded = tools_manager.encode_image(Path(__file__).parent / "data" / image_name)
         tools_manager.print_encode_stats(stats)
         stats, decoded = tools_manager.decode_image(encoded)
         tools_manager.print_decode_stats(stats)

@@ -64,7 +64,7 @@ def process_blit():
         screen_to_blit = pygame.image.fromstring(receiving_data_to_blit["screen_bytes"], SCREEN_SIZE, 'RGB')
         screen.blit(screen_to_blit, (0, 0))
         cursor_x, cursor_y = receiving_data_to_blit["cursor_x"], receiving_data_to_blit["cursor_y"]
-        pygame.draw.circle(screen, (0, 0, 255), (cursor_x, cursor_y), 4)
+        pygame.draw.circle(screen, (255, 0, 0), (cursor_x, cursor_y), 5)
         pygame.draw.circle(screen, (255, 255, 255), (cursor_x, cursor_y), 2)
         pygame.display.set_caption(receiving_data_to_blit["caption"])
 

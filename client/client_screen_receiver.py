@@ -53,7 +53,7 @@ class ScreenReceiverClient:
 
     def read_data(self, data: bytes) -> dict:
         result_dict = dict()
-        result_dict["index"] = self.index = int.from_bytes(data[:SCREEN_INDEX_SIZE], 'big')
+        self.index = result_dict["index"] = int.from_bytes(data[:SCREEN_INDEX_SIZE], 'big')
         offset = SCREEN_INDEX_SIZE
         result_dict["screenshotted_time_ms"] = int.from_bytes(data[offset:offset + SCREEN_TIME_SIZE], 'big')
         offset += SCREEN_TIME_SIZE
@@ -64,7 +64,6 @@ class ScreenReceiverClient:
         result_dict["cursor_y"] = int.from_bytes(data[offset:offset + SCREEN_CURSOR_Y_SIZE], 'big')
         offset += SCREEN_CURSOR_Y_SIZE
         result_dict["data"] = data[offset:]
-        result_dict["size"] = len(result_dict["data"])
         return result_dict
 
     def recv_screen(self) -> Dict:
@@ -72,20 +71,23 @@ class ScreenReceiverClient:
         index_str = f"{self.index}: "
         align = "".ljust(len(index_str))
 
-        # Request sending
-        self._socket_transceiver.send_raw(b'\x01')
+        # Sending request
+        self._socket_transceiver.send_raw(b"\x01")
 
         # Receiving
+        _start_time_ms = time_ms()
         print(f"{index_str}{time_ms()} 1: request is sent, waiting to receive...")
-        result_dict = self.read_data(self._socket_transceiver.recv_framed())
-        sleep(0.1)  # задержка сети
+        received = self._socket_transceiver.recv_framed()
+        result_dict = self.read_data(received)
+        # sleep(0.1)  # задержка сети
+        result_dict["size"] = len(received)
         result_dict["received_time_ms"] = time_ms()
-        print(f"{align}{time_ms()} 6: screen {result_dict["size"]} B is received!")
+        print(f"{align}{time_ms()} 1: {result_dict["size"]} B is received for {time_ms() - _start_time_ms} ms!")
 
         # Screen decoding
-        print(f"{align}{time_ms()} 7: start decoding screen{self.index}...")
+        print(f"{align}{time_ms()} 2: start decoding...")
         stats, result_dict["data"] = self.tools_manager.decode_image(result_dict["data"])
-        print(f"{align}{time_ms()} 8: screen{self.index} is decoded for {time_ms(stats["total_time"])} ms!")
+        print(f"{align}{time_ms()} 2: screen{self.index} is decoded for {time_ms(stats["total_time"])} ms!")
 
         return result_dict
 
@@ -99,6 +101,7 @@ class ScreenReceiverClient:
 if __name__ == "__main__":
     client = ScreenReceiverClient('192.168.56.1', 8888)
     if client.connect():
-        print(client.recv_screen())
-        print(client.recv_screen())
+        client.recv_screen()
+        client.recv_screen()
+        # client.show(client.recv_screen()["data"])
     client.close()

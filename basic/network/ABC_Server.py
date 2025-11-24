@@ -13,6 +13,9 @@ class Server(ABC):
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
+    def close(self):
+        self.server_socket.close()
+
     @staticmethod
     def get_external_ip() -> str:
         try:
@@ -37,27 +40,20 @@ class Server(ABC):
             while True:
                 print(f"{self.name}: Waiting for client connection ({self.server_socket.getsockname()[1]})...")
                 client_socket, address = self.server_socket.accept()
-                self.handle_client(client_socket, address)
+                print(f"{self.name}: Client connected: {address}")
+                try:
+                    self.client_loop(client_socket, address)
+                except Exception as e:
+                    print(f"{self.name}: while handle_client({address}): {e}")
+                finally:
+                    print(f"{self.name}: Client {address} connection is terminated.")
+                    client_socket.close()
         except Exception as e:
             print(f"{self.name}: {e}")
+            raise e
         finally:
-            print(f"{self.name}: socket closed.")
             self.close()
-
-    def handle_client(self, client_socket, address):
-        try:
-            print(f"{self.name}: Client connected: {address}")
-            print(f"{self.name}: Start client loop.")
-            self.client_loop(client_socket, address)
-        except Exception as e:
-            print(f"{self.name}: Client error {address}: {e}")
-        finally:
-            print(f"{self.name}: Client {address} connection is terminated.")
-            client_socket.close()
 
     @abstractmethod
     def client_loop(self, client_socket, address):
         ...
-
-    def close(self):
-        self.server_socket.close()

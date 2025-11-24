@@ -1,6 +1,7 @@
 import socket
-from typing import Tuple
+from typing import Tuple, Dict
 
+import numpy as np
 import pyautogui
 
 from basic.image.ToolsManager import ToolsManager
@@ -35,10 +36,9 @@ class ServerScreener(Server):
             raise e
 
     @staticmethod
-    def prepare_data_to_send(loop_index: int, tools_manager: ToolsManager) -> Tuple[int, bytes]:
+    def prepare_data_to_send(loop_index: int, tools_manager: ToolsManager) -> Tuple[int, Dict, np.ndarray, bytes]:
         _screenshotted_time_ms = time_ms()
-        stats, difference, data = tools_manager.encode_image()
-        tools_manager.apply_difference(difference)
+        stats, reference, data = tools_manager.encode_image()
         cursor_x, cursor_y = pyautogui.position()
         _encoded_time_ms = time_ms()
         data_to_send_list = [
@@ -49,11 +49,11 @@ class ServerScreener(Server):
             cursor_y.to_bytes(SCREEN_CURSOR_Y_SIZE, 'big'),
             data
         ]
-        return _encoded_time_ms - _screenshotted_time_ms, b''.join(data_to_send_list)
+        return _encoded_time_ms - _screenshotted_time_ms, stats, reference, b''.join(data_to_send_list)
 
     def client_loop(self, client_socket, address):
         socket_transceiver = SocketTransceiver(client_socket)
-        socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
+        socket_transceiver.set_timeout(None)
         tools_manager = self.init_tools_manager(socket_transceiver)
         print(f"{self.name}: {tools_manager} is created!")
         print(f"{self.name}: start client_loop.")
@@ -64,28 +64,29 @@ class ServerScreener(Server):
                 index_str = f"{index}: "
                 align = "".ljust(len(index_str))
 
-                # Request waiting
-                print(f"{index_str}{time_ms()} 0: waiting for sending request...")
+                # Waiting for request
+                print(f"{index_str}{time_ms()} 0: waiting for request...")
                 socket_transceiver.set_timeout(None)
-                socket_transceiver.recv_raw(1)  # Ожидание запроса на отправку скриншота
+                socket_transceiver.recv_raw(1)
                 socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
 
                 # Screen encoding
-                print(f"{align}{time_ms()} 2: request is received, start encoding...")
-                _encode_delta_time_ms, data_to_send = self.prepare_data_to_send(index, tools_manager)
-                print(f"{align}{time_ms()} 3: screen is encoded for {_encode_delta_time_ms} ms!")
+                print(f"{align}{time_ms()} 1: request is received, start encoding...")
+                _encode_delta_time_ms, stats, reference, data_to_send = self.prepare_data_to_send(index, tools_manager)
+                tools_manager.update_reference(reference)
+                print(f"{align}{time_ms()} 1: screen is encoded for {_encode_delta_time_ms} ms!")
 
                 # Sending
-                print(f"{align}{time_ms()} 4: start sending {len(data_to_send)} B...")
                 socket_transceiver.send_framed(data_to_send)
-                print(f"{align}{time_ms()} 5: {len(data_to_send)} B is sent!")
+                print(f"{align}{time_ms()} 2: {len(data_to_send)} B is sent!")
+                # tools_manager.print_encode_stats(stats)
+
         except SocketTransceiverError as e:
             print(f"{self.name}: {e}")
         except Exception as e:
             print(f"{self.name}: {e}")
             raise e
         finally:
-            socket_transceiver.close()
             print(f"{self.name}: end client_loop.")
 
 
