@@ -1,5 +1,5 @@
 import socket
-from time import time, sleep
+from time import sleep
 from typing import Tuple, Dict
 
 import numpy as np
@@ -7,6 +7,7 @@ import numpy as np
 from basic.image.ToolsManager import ToolsManager
 from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
 from basic.network.size_constants import *
+from basic.network.time_ms import time_ms
 
 
 class ScreenReceiverClient:
@@ -26,6 +27,7 @@ class ScreenReceiverClient:
         self.width, self.height = 1, 1
         self.colors, self.scale_percent = colors, scale_percent
         self.tools_manager = ToolsManager()
+        self.index = 0
 
     def get_screen_size(self) -> Tuple[int, int]:
         return self.width, self.height
@@ -46,51 +48,61 @@ class ScreenReceiverClient:
             return False
         self.tools_manager = ToolsManager(self.width, self.height, self.colors, self.scale_percent)
         print(f"{self.name}: {self.tools_manager} is created!")
+        self.index = 0
         return True
 
-    def close(self):
-        self._socket_transceiver.close()
-
     def recv_screen(self) -> Dict:
-        self.tools_manager.print_divided_line()
-
+        self.index += 1
+        index_str = f"{self.index}: "
+        align = "".ljust(len(index_str))
+        # Request sending
         self._socket_transceiver.send_raw(b'\x01')
-        send_request_time_in_ms = int(time() * 1000)
-        print(f"{send_request_time_in_ms} - {self.name}: request is sent, waiting to receive...")
-        screen_index = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_INDEX_SIZE), 'big')
-        screen_time_in_ms = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_TIME_SIZE), 'big')
-        start_sending_time_in_ms = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_TIME_SIZE), 'big')
-        cursor_x = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_CURSOR_X_SIZE), 'big')
-        cursor_y = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_CURSOR_Y_SIZE), 'big')
-        data = self._socket_transceiver.recv_framed()
-        weight = SCREEN_INDEX_SIZE + SCREEN_TIME_SIZE + SCREEN_CURSOR_X_SIZE + SCREEN_CURSOR_Y_SIZE + len(data)
-        sleep(0.4)  # задержка сети
-        received_time_in_ms = int(time() * 1000)
-        print(f"{received_time_in_ms} - {self.name}: ({screen_index}, {weight} B) is received!")
-
-        print(f"{int(time() * 1000)} - {self.name}: start decoding {screen_index}...")
+        send_request_time_in_ms = time_ms()
+        # Receiving
+        print(f"{index_str}{send_request_time_in_ms} 1: request is sent, waiting to receive...")
+        received_data = self._socket_transceiver.recv_framed()
+        self.index = int.from_bytes(received_data[:SCREEN_INDEX_SIZE], 'big')
+        offset = SCREEN_INDEX_SIZE
+        screen_time_in_ms = int.from_bytes(received_data[offset:offset + SCREEN_TIME_SIZE], 'big')
+        offset += SCREEN_TIME_SIZE
+        start_sending_time_in_ms = int.from_bytes(received_data[offset:offset + SCREEN_TIME_SIZE], 'big')
+        offset += SCREEN_TIME_SIZE
+        cursor_x = int.from_bytes(received_data[offset:offset + SCREEN_CURSOR_X_SIZE], 'big')
+        offset += SCREEN_CURSOR_X_SIZE
+        cursor_y = int.from_bytes(received_data[offset:offset + SCREEN_CURSOR_Y_SIZE], 'big')
+        offset += SCREEN_CURSOR_Y_SIZE
+        data = received_data[offset:]
+        sleep(0.1)  # задержка сети
+        received_time_in_ms = time_ms()
+        print(f"{align}{received_time_in_ms} 6: screen {len(data)} B is received!")
+        # Screen dencoding
+        print(f"{align}{time_ms()} 7: start decoding screen{self.index}...")
         stats, image_array = self.tools_manager.decode_image(data)
-        print(f"{int(time() * 1000)} - {self.name}: {screen_index} is decoded...")
+        print(f"{align}{time_ms()} 8: screen{self.index} is decoded for {time_ms(stats["total_time"])} ms!")
 
         result = {
-            "screen_index": screen_index,
+            "screen_index": self.index,
             "screen_time_in_ms": screen_time_in_ms,
             "send_request_time_in_ms": send_request_time_in_ms,
             "start_sending_time_in_ms": start_sending_time_in_ms,
             "received_time_in_ms": received_time_in_ms,
-            "weight": weight,
+            "weight": len(data),
             "cursor_x": cursor_x,
             "cursor_y": cursor_y,
             "image_array": image_array
         }
         return result
 
+    def close(self):
+        self._socket_transceiver.close()
+
     def show(self, image_array: np.ndarray):
         self.tools_manager.show_decoded_image(image_array)
 
 
 if __name__ == "__main__":
-    client = ScreenReceiverClient('10.173.23.76', 6732)
+    client = ScreenReceiverClient('192.168.56.1', 56468)
     if client.connect():
-        client.show(client.recv_screen()["image_array"])
+        client.recv_screen()
+        client.recv_screen()
     client.close()

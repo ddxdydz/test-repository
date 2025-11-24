@@ -1,8 +1,10 @@
+import threading
 from enum import Enum
 from time import time
 
 import pygame
 
+from basic.network.time_ms import time_ms
 from client.client_screen_receiver import ScreenReceiverClient
 
 
@@ -15,29 +17,71 @@ class State(Enum):
         return State((self.value + 1) % 3)
 
 
-def show_info(loop_time_in_s, screen_index, weight,
-              screen_time_in_ms, send_request_time_in_ms, start_sending_time_in_ms,  received_time_in_ms, **kwargs):
-    fps = round(1 / loop_time_in_s, 3)
-
-    request_delay = send_request_time_in_ms - screen_time_in_ms
-    server_delay = start_sending_time_in_ms - send_request_time_in_ms
+def get_metrics_str(screen_index, weight, screen_time_in_ms, start_sending_time_in_ms, received_time_in_ms) -> str:
+    server_delay = start_sending_time_in_ms - screen_time_in_ms
     network_delay = received_time_in_ms - start_sending_time_in_ms
-    decode_delay = int(time() * 1000) - received_time_in_ms
-    current_speed = round(weight * 8 / 1024 / (network_delay / 1000), 3)
-
+    decode_delay = time_ms() - received_time_in_ms
+    current_speed = round(weight * 8 / 1024 / (network_delay / 1000), 3) if network_delay != 0 else "-"
     str_metrics = [
         f"{screen_index} = {weight} B",
-        f"FPS: {fps}",
-        f"delay: {int(time() * 1000) - screen_time_in_ms} ms",
-        f"blit: {int(loop_time_in_s * 1000)} ms",
-        f"request: {request_delay} ms",
-        f"server: {server_delay} ms",
+        f"delay: {time_ms() - screen_time_in_ms} ms",
+        f"encode: {server_delay} ms",
         f"network: {network_delay} ms",
         f"decode: {decode_delay} ms",
-        f"{current_speed}кбит/с"
+        f"{current_speed}kbit/s"
     ]
+    return '    '.join(str_metrics)
 
-    pygame.display.set_caption('    '.join(str_metrics))
+
+def process_receiving():
+    try:
+        while True:
+            continue_receiving_event.wait()
+            recv = client_screen_receiver.recv_screen()
+            receiving_data_to_blit = {
+                "screen_bytes": recv["image_array"].tobytes(),
+                "caption": get_metrics_str(
+                    recv["screen_index"], recv["weight"], recv["screen_time_in_ms"],
+                    recv["start_sending_time_in_ms"], recv["received_time_in_ms"]),
+                "cursor_x": recv["cursor_x"],
+                "cursor_y": recv["cursor_y"]
+            }
+            with receiving_data_queue_lock:
+                receiving_data_queue.clear()
+                receiving_data_queue.append(receiving_data_to_blit)
+    except Exception as ex:
+        print(f"Pygame process_screen Error: {ex}")
+        raise ex
+
+
+def process_blit():
+    receiving_data_to_blit = None
+    with receiving_data_queue_lock:
+        if receiving_data_queue:
+            receiving_data_to_blit = receiving_data_queue[-1]
+            receiving_data_queue.clear()
+    if receiving_data_to_blit is not None:
+        screen_to_blit = pygame.image.fromstring(receiving_data_to_blit["screen_bytes"], SCREEN_SIZE, 'RGB')
+        screen.blit(screen_to_blit, (0, 0))
+        cursor_x, cursor_y = receiving_data_to_blit["cursor_x"], receiving_data_to_blit["cursor_y"]
+        pygame.draw.circle(screen, (0, 0, 255), (cursor_x, cursor_y), 4)
+        pygame.draw.circle(screen, (255, 255, 255), (cursor_x, cursor_y), 2)
+        pygame.display.set_caption(receiving_data_to_blit["caption"])
+
+
+def process_current_state(current_state: State):
+    if current_state == State.INACTIVE:
+        pygame.display.set_caption(State.INACTIVE.name)
+        continue_receiving_event.clear()
+    elif current_state == State.ONLY_HANDLER:
+        pygame.display.set_caption(State.ONLY_HANDLER.name)
+        continue_receiving_event.clear()
+    else:
+        continue_receiving_event.set()
+    # if current_state != State.INACTIVE and not client_command_sender.is_recording:
+    #     client_command_sender.start()
+    # if current_state == State.INACTIVE and client_command_sender.is_recording:
+    #     client_command_sender.stop()
 
 
 def main():
@@ -48,7 +92,7 @@ def main():
     # client_command_sender.stop()
 
     while running:
-        start_loop_time = time()
+        _start_loop = time()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -61,26 +105,8 @@ def main():
                     # client_command_sender.reset_calibration(*pygame.mouse.get_pos())
                     current_state = current_state.get_next_stage()
 
-        if current_state == State.INACTIVE:
-            pygame.display.set_caption(State.INACTIVE.name)
-        elif current_state == State.ONLY_HANDLER:
-            pygame.display.set_caption(State.ONLY_HANDLER.name)
-        else:
-            try:
-                received = client_screen_receiver.recv_screen()
-                screen_to_blit = pygame.image.fromstring(received["image_array"].tobytes(), SCREEN_SIZE, 'RGB')
-                screen.blit(screen_to_blit, (0, 0))
-                pygame.draw.circle(screen, (255, 255, 255), (received["cursor_x"], received["cursor_y"]), 5)
-                pygame.draw.circle(screen, (0, 0, 255), (received["cursor_x"], received["cursor_y"]), 3)
-                show_info(time() - start_loop_time, **received)
-            except Exception as exp:
-                print(f"Pygame LOOP screen blit Error: {exp}")
-
-        # if current_state != State.INACTIVE and not client_command_sender.is_recording:
-        #     client_command_sender.start()
-        # if current_state == State.INACTIVE and client_command_sender.is_recording:
-        #     client_command_sender.stop()
-
+        process_blit()
+        process_current_state(current_state)
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -88,35 +114,34 @@ def main():
 
 
 if __name__ == "__main__":
-    client_screen_receiver, client_command_sender = None, None
+    pygame.init()
+    pygame.display.set_caption("MY PYGAME")
+    FPS = 30
+
+    HOSTS = ['localhost', '158.160.182.121', ]
+    PORTS = [2952, 8888]
+    client_screen_receiver = ScreenReceiverClient(HOSTS[0], PORTS[0], 4, 80)
+    # client_command_sender = CommandRecorderClient(current_host, port_2)
+
     try:
-        pygame.init()
-        pygame.display.set_caption("MY PYGAME")
-        FPS = 20
-
-        vm = '158.160.182.121'
-        lh = 'localhost'
-        current_host = lh
-        port_1, port_2 = 48693, 50589
-
-        client_screen_receiver = ScreenReceiverClient(current_host, port_1, 4, 80)
         client_screen_receiver.connect()
         SCREEN_SIZE = client_screen_receiver.get_screen_size()
-
-        # client_command_sender = CommandRecorderClient(current_host, port_2)
         # client_command_sender.SCREEN_SIZE[0], client_command_sender.SCREEN_SIZE[1] = SCREEN_SIZE
         # client_command_sender.connect()
-
-        WINDOW_SIZE = (SCREEN_SIZE[0] // 2 if SCREEN_SIZE[0] > 1400 else SCREEN_SIZE[0],
-                       SCREEN_SIZE[1] // 2 if SCREEN_SIZE[1] > 1000 else SCREEN_SIZE[1])
+        WINDOW_SIZE = (1000, 800) if SCREEN_SIZE[0] > 1400 or SCREEN_SIZE[1] > 1000 else SCREEN_SIZE
         screen = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
+
+        continue_receiving_event = threading.Event()
+        receiving_data_queue_lock = threading.Lock()
+        receiving_data_queue = []
+        process_screen_thread = threading.Thread(target=process_receiving, daemon=True)
+        process_screen_thread.start()
+
         main()
     except Exception as e:
         print(f"Pygame Error: {e}")
     finally:
-        if client_screen_receiver is not None:
-            client_screen_receiver.close()
-            print("client_screen_receiver closed.")
-        if client_command_sender is not None:
-            client_command_sender.close()
-            print("client_command_sender closed.")
+        client_screen_receiver.close()
+        print("client_screen_receiver closed.")
+        # client_command_sender.close()
+        # print("client_command_sender closed.")
