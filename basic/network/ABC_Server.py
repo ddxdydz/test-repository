@@ -2,27 +2,16 @@ import socket
 import urllib.request
 from abc import ABC, abstractmethod
 
-import pyautogui
-
 
 class Server(ABC):
     def __init__(self, host='0.0.0.0', port=0):
         self.name = self.__class__.__name__
         self.host = host
         self.port = port
-        self.clients = []
-        self.allowed_hosts = ['10.140.82.76', '188.162.86.103', '127.0.0.1']
-
-        pyautogui.FAILSAFE = False  # отключает при курсоре в углу
-
-        self.running = False
-
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
 
     @staticmethod
     def get_external_ip() -> str:
@@ -41,7 +30,6 @@ class Server(ABC):
             f"\n* External IP: {Server.get_external_ip()}"
 
     def start(self):
-        self.running = True
         try:
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(1)
@@ -51,30 +39,19 @@ class Server(ABC):
                 client_socket, address = self.server_socket.accept()
                 self.handle_client(client_socket, address)
         except Exception as e:
-            print(f"{self.name}: Ошибка сервера: {e}")
+            print(f"{self.name}: {e}")
         finally:
             print(f"{self.name}: socket closed.")
-            self.server_socket.close()
-
-    def stop(self):
-        print(f"{self.name}: stopped.")
-        self.running = False
-        for client in self.clients:
-            client.close()
+            self.close()
 
     def handle_client(self, client_socket, address):
         try:
             print(f"{self.name}: Client connected: {address}")
-            self.clients.append(client_socket)
-            if address[0] not in self.allowed_hosts:
-                print(f"{self.name}: Address not in allowed_hosts.")
-            else:
-                print(f"{self.name}: Start client loop.")
-                self.client_loop(client_socket, address)
+            print(f"{self.name}: Start client loop.")
+            self.client_loop(client_socket, address)
         except Exception as e:
             print(f"{self.name}: Client error {address}: {e}")
         finally:
-            self.clients.remove(client_socket)
             print(f"{self.name}: Client {address} connection is terminated.")
             client_socket.close()
 
@@ -82,11 +59,5 @@ class Server(ABC):
     def client_loop(self, client_socket, address):
         ...
 
-
-if __name__ == "__main__":
-    server = Server()
-    try:
-        server.start()
-    except KeyboardInterrupt:
-        print("Stopping...")
-        server.stop()
+    def close(self):
+        self.server_socket.close()

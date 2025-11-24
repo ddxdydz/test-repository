@@ -87,8 +87,12 @@ class SocketTransceiver:
             TerminatedSocketTransceiverError: Если соединение закрыто или запрошено 0 байт
             TimeoutSocketTransceiverError: Если превышен таймаут при получении данных
         """
+        if self.closed:
+            raise TerminatedSocketTransceiverError(f"Socket is closed")
+
         if num_bytes == 0:
             raise TerminatedSocketTransceiverError("Input zero bytes to receive")
+
         self._validate_size(num_bytes)
 
         data_chunks = []
@@ -126,6 +130,9 @@ class SocketTransceiver:
         return self._recv_all(size)
 
     def _send_all(self, data: bytes):
+        if self.closed:
+            raise TerminatedSocketTransceiverError(f"Socket is closed")
+
         self._validate_data(data)
 
         total_sent = 0
@@ -161,7 +168,7 @@ class SocketTransceiver:
         size_bytes = size.to_bytes(self.header_size, 'big', signed=False)
         self._send_all(size_bytes + data)
 
-    def set_timeout(self, timeout: float):
+    def set_timeout(self, timeout: float | None):
         """Устанавливает таймаут для операций с сокетом в секундах."""
         if self._socket:
             self._socket.settimeout(timeout)

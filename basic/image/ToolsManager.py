@@ -14,7 +14,7 @@ from basic.image.resizing.CVResizerIntScale import CVResizerIntScale
 
 
 class ToolsManager:
-    def __init__(self, width: int, height: int, colors: int, scale_percent: int):
+    def __init__(self, width: int = 2, height: int = 2, colors: int = 2, scale_percent: int = 100):
         self.name = self.__class__.__name__
         self.parameters = width, height, colors, scale_percent
         self._resizer = CVResizerIntScale(scale_percent=scale_percent, original_size=(width, height))
@@ -168,8 +168,15 @@ class ToolsManager:
     def print_divided_line() -> None:
         print("########################################################")
 
+    def __str__(self):
+        return f"{self.name}{self.parameters}"
+
+    def __repr__(self):
+        return f"{self.name}{self.parameters}"
+
 
 if __name__ == "__main__":
+    print(ToolsManager())
     tools_manager = ToolsManager(1279, 719, 3, 60)
     for image_name in ["ch1.jpg", "ch2.jpg", "ch3.jpg", "ch3.jpg"]:
         stats, diff, encoded = tools_manager.encode_image(Path(__file__).parent / "data" / image_name)

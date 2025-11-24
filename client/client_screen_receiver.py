@@ -1,88 +1,96 @@
 import socket
-from time import time, strftime, gmtime
+from time import time, sleep
+from typing import Tuple, Dict
 
-from PIL import Image
+import numpy as np
 
-from alegacy.image.ImageCompressor import ImageCompressor
-from basic.network.SocketTransceiver import recv_with_header_size
+from basic.image.ToolsManager import ToolsManager
+from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
+from basic.network.size_constants import *
 
 
 class ScreenReceiverClient:
-    def __init__(self, server_host, server_port=8888):
-        self.server_host = server_host
-        self.server_port = server_port
-        self.screen_recv_count = 0
+    SOCKET_TIMEOUT = 10
 
-    def connect(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 524288)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 524288)
+    def __init__(self, server_host, server_port=8888, colors: int = 3, scale_percent: int = 60):
+        self.name = self.__class__.__name__
+        self._server_host = server_host
+        self._server_port = server_port
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
+        self._socket_transceiver = SocketTransceiver(self._socket)
+        self._socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
+        self.width, self.height = 1, 1
+        self.colors, self.scale_percent = colors, scale_percent
+        self.tools_manager = ToolsManager()
 
-        self.socket.connect((self.server_host, self.server_port))
-        print(f"ScreenReceiverClient - Connected to server {self.server_host}:{self.server_port}")
-
-    def start(self):
-        data = recv_with_header_size(self.socket)
-        self.width = int.from_bytes(data[:4], byteorder='big', signed=False)
-        self.height = int.from_bytes(data[4:8], byteorder='big', signed=False)
-        print("ScreenReceiverClient - screen size params is configured:", self.width, self.height)
-        compression = int.from_bytes(data[8:12], byteorder='big', signed=False)
-        quantization = int.from_bytes(data[12:16], byteorder='big', signed=False)
-        colors_count = int.from_bytes(data[16:20], byteorder='big', signed=False)
-        self.compressor = ImageCompressor(compression, quantization, colors_count)
-        print("ScreenReceiverClient - compression params is configured:", self.compressor.get_info())
-
-    def get_screen_size(self):
+    def get_screen_size(self) -> Tuple[int, int]:
         return self.width, self.height
 
+    def connect(self) -> bool:
+        self._socket.connect((self._server_host, self._server_port))
+        print(f"{self.name}: Connected to server {self._server_host}:{self._server_port}")
+        try:
+            # Получение параметров экрана
+            self.width = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_WIDTH_SIZE), 'big')
+            self.height = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_HEIGHT_SIZE), 'big')
+            # Отправка параметров выходного изображения
+            self._socket_transceiver.send_raw(self.colors.to_bytes(COLORS_SIZE, 'big'))
+            self._socket_transceiver.send_raw(self.scale_percent.to_bytes(SCALE_PERCENT_SIZE, 'big'))
+        except SocketTransceiverError as e:
+            print(f"{self.name}: {e}")
+            self.close()
+            return False
+        self.tools_manager = ToolsManager(self.width, self.height, self.colors, self.scale_percent)
+        print(f"{self.name}: {self.tools_manager} is created!")
+        return True
+
     def close(self):
-        self.socket.close()
+        self._socket_transceiver.close()
 
-    def recv_screen_bytes(self) -> (int, bytes):
-        self.screen_recv_count += 1
-        print(f"CLIENT screen#{self.screen_recv_count}: start receiving ({strftime('%H:%M:%S', gmtime())})...")
+    def recv_screen(self) -> Dict:
+        self.tools_manager.print_divided_line()
 
-        start_time = time()
-        screenshot_bytes = recv_with_header_size(self.socket)
-        if not screenshot_bytes:
-            print(f"CLIENT screen#{self.screen_recv_count}: Received Error!")
-        time_to_recv_screen = time() - start_time
+        self._socket_transceiver.send_raw(b'\x01')
+        send_request_time_in_ms = int(time() * 1000)
+        print(f"{send_request_time_in_ms} - {self.name}: request is sent, waiting to receive...")
+        screen_index = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_INDEX_SIZE), 'big')
+        screen_time_in_ms = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_TIME_SIZE), 'big')
+        start_sending_time_in_ms = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_TIME_SIZE), 'big')
+        cursor_x = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_CURSOR_X_SIZE), 'big')
+        cursor_y = int.from_bytes(self._socket_transceiver.recv_raw(SCREEN_CURSOR_Y_SIZE), 'big')
+        data = self._socket_transceiver.recv_framed()
+        weight = SCREEN_INDEX_SIZE + SCREEN_TIME_SIZE + SCREEN_CURSOR_X_SIZE + SCREEN_CURSOR_Y_SIZE + len(data)
+        sleep(0.4)  # задержка сети
+        received_time_in_ms = int(time() * 1000)
+        print(f"{received_time_in_ms} - {self.name}: ({screen_index}, {weight} B) is received!")
 
-        start_time = time()
-        weight = len(screenshot_bytes)
-        img_bytes = self.compressor.decompress_to_bytes(screenshot_bytes, (self.width, self.height))
-        time_to_decompress = time() - start_time
+        print(f"{int(time() * 1000)} - {self.name}: start decoding {screen_index}...")
+        stats, image_array = self.tools_manager.decode_image(data)
+        print(f"{int(time() * 1000)} - {self.name}: {screen_index} is decoded...")
 
-        total_time = time_to_recv_screen + time_to_decompress
-        print(f"CLIENT screen#{self.screen_recv_count} is recv ({strftime('%H:%M:%S', gmtime())})!")
-        print(f" - time_to_recv_screen:{round(time_to_recv_screen, 4)}с")
-        print(f" - time_to_decompress:{round(time_to_decompress, 4)}с",
-              f"({len(img_bytes) // 1024}KB -> {weight // 1024}KB)")
-        print(f" - total_time:{round(total_time, 4)}с")
+        result = {
+            "screen_index": screen_index,
+            "screen_time_in_ms": screen_time_in_ms,
+            "send_request_time_in_ms": send_request_time_in_ms,
+            "start_sending_time_in_ms": start_sending_time_in_ms,
+            "received_time_in_ms": received_time_in_ms,
+            "weight": weight,
+            "cursor_x": cursor_x,
+            "cursor_y": cursor_y,
+            "image_array": image_array
+        }
+        return result
 
-        self.socket.sendall(b'\x01')  # Подтверждение успешного получения
-        return weight, img_bytes
-
-    def recv_screen_image(self) -> Image:
-        img_weight, image_bytes = self.recv_screen_bytes()
-        print("Получен скриншот:", f"{img_weight // 1024}KB", "->", f"{len(image_bytes) // 1024}KB")
-        return Image.frombytes('RGB', (self.width, self.height), image_bytes)
+    def show(self, image_array: np.ndarray):
+        self.tools_manager.show_decoded_image(image_array)
 
 
 if __name__ == "__main__":
-    # client = ScreenReceiverClient('51.250.45.221', 39865)
-    client = ScreenReceiverClient('158.160.205.94', 33293)
-    client.connect()
-    client.start()
-    # from time import time
-    # while True:
-    #     start = time()
-    screen = client.recv_screen_image()
-    #     print(time() - start)
-    screen = client.recv_screen_image()
-    screen = client.recv_screen_image()
-    screen = client.recv_screen_image()
-    screen.show()
+    client = ScreenReceiverClient('10.173.23.76', 6732)
+    if client.connect():
+        client.show(client.recv_screen()["image_array"])
     client.close()

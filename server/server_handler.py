@@ -23,6 +23,7 @@ class Action(Enum):  # 16 действий максимум
 
 class CommandHandler:
     def __init__(self, input_socket: socket.socket, active=False):
+        pyautogui.FAILSAFE = False  # отключает при курсоре в углу
         self.socket = input_socket
         self.active = active
 

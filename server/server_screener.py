@@ -1,3 +1,4 @@
+import socket
 import threading
 from time import time, strftime, gmtime
 from typing import List, Dict
@@ -19,6 +20,17 @@ class ServerScreener(Server):
     def __init__(self, host='0.0.0.0', port=0):
         super().__init__(host, port)
         self.name = self.__class__.__name__
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
+
+    @staticmethod
+    def print_stats(stats_list: List[Dict]) -> None:
+        for stats in stats_list:
+            print(f"Screen №{stats["screen_index"]}",
+                  f"{stats["is_terminated"]}",
+                  f"{stats["screen_time_in_ms"]}",
+                  f"{stats["encoded_size"]} B",
+                  f"{stats["total_time"]} с", sep=" - ")
 
     def client_loop(self, client_socket, address):
         socket_transceiver = SocketTransceiver(client_socket)
@@ -38,18 +50,13 @@ class ServerScreener(Server):
             return
 
         tools_manager = ToolsManager(screen_width, screen_height, colors, scale_percent)
+        print(f"{self.name}: {tools_manager} is created!")
 
         latest_stats: List[Dict] = []
         latest_difference = np.zeros((1,))
         difference_to_apply = np.zeros((1,))
-        latest_data_bytes_to_send = {
-            "screen_index": b'',
-            "screen_time_in_ms": b'',
-            "cursor_x": b'',
-            "cursor_y":  b'',
-            "data_to_send": b''
-        }
-
+        latest_data_bytes_to_send = {"screen_index": b'', "screen_time_in_ms": b'', "cursor_x": b'',
+                                     "cursor_y":  b'', "data_to_send": b''}
         lock = threading.Lock()
         reference_changed_event = threading.Event()
         stop_encoding_event = threading.Event()
@@ -103,34 +110,45 @@ class ServerScreener(Server):
 
                 ready_to_send_event.set()
 
-        encode_thread = threading.Thread(target=encode_screen)
+        encode_thread = threading.Thread(target=encode_screen, daemon=True)
         encode_thread.start()
         print(f"{self.name}: encode_screen_thread is activated.")
         print(f"{self.name}: start client_loop.")
         try:
             while True:
-                print(f"{int(time() * 1000)} - {self.name}: waiting for send request...")
+                print(f"{int(time() * 1000)} - {self.name}: waiting for sending request...")
+                socket_transceiver.set_timeout(None)
                 socket_transceiver.recv_raw(1)  # Ожидание запроса на отправку скриншота
+                socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
+                print(f"{int(time() * 1000)} - {self.name}: sending request is received!")
                 print(f"{int(time() * 1000)} - {self.name}: waiting for send data to be ready...")
                 ready_to_send_event.wait(self.READY_TO_SEND_EVENT_TIMEOUT)
                 print(f"{int(time() * 1000)} - {self.name}: waiting for lock to be enabled...")
                 with lock:
                     # Отправляем все данные
-                    print(f"{int(time() * 1000)} - {self.name}: start sending",
-                          f"({latest_data_bytes_to_send["screen_index"]}, {latest_stats[-1]["encoded_size"]} B)...")
+                    index = latest_stats[-1]["screen_index"]
+                    additional_size = SCREEN_INDEX_SIZE + SCREEN_TIME_SIZE + SCREEN_CURSOR_X_SIZE + SCREEN_CURSOR_Y_SIZE
+                    encoded_size = latest_stats[-1]["encoded_size"]
+                    data_size = additional_size + encoded_size
+                    start_sending_time_in_ms = int(time() * 1000)
+                    print(f"{start_sending_time_in_ms} - {self.name}: start sending ({index}, {data_size} B)...")
                     socket_transceiver.send_raw(latest_data_bytes_to_send["screen_index"])
                     socket_transceiver.send_raw(latest_data_bytes_to_send["screen_time_in_ms"])
+                    socket_transceiver.send_raw(start_sending_time_in_ms.to_bytes(SCREEN_TIME_SIZE, 'big'))
                     socket_transceiver.send_raw(latest_data_bytes_to_send["cursor_x"])
                     socket_transceiver.send_raw(latest_data_bytes_to_send["cursor_y"])
                     socket_transceiver.send_framed(latest_data_bytes_to_send["data_to_send"])
-                    print(f"{int(time() * 1000)} - {self.name}: ({latest_stats[-1]["encoded_size"]} B) is sent!")
+                    print(f"{int(time() * 1000)} - {self.name}: ({index}, {data_size} B) is sent!")
                     # Обновляем разницу для применения
                     difference_to_apply = latest_difference
                     reference_changed_event.set()
                     # Очищаем статистику
+                    self.print_stats(latest_stats)
                     latest_stats.clear()
                 ready_to_send_event.clear()
         except SocketTransceiverError as e:
+            socket_transceiver.close()
+            stop_encoding_event.set()
             print(f"{self.name}: {e}")
         finally:
             socket_transceiver.close()
@@ -144,8 +162,4 @@ if __name__ == "__main__":
         server.start()
     except KeyboardInterrupt:
         print("Остановка сервера...")
-        server.stop()
-    print(strftime('%H:%M:%S', gmtime(int(time()))))
-    print(strftime('%H:%M:%S', gmtime()))
-    print(time())
-    print(gmtime())
+        server.close()
