@@ -79,7 +79,7 @@ class ServerScreener(Server):
                 socket_transceiver.send_framed(data_to_send)
                 print(f"{align}{time_ms()} 2: {len(data_to_send)} B is sent!")
                 # tools_manager.print_encode_stats(stats)
-        except SocketTransceiverError as e:
+        except (SocketTransceiverError, ConnectionResetError, ConnectionAbortedError) as e:
             print(f"{self.name}: {e}")
             print(f"{self.name}: end client_loop.")
         except Exception as e:

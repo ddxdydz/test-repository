@@ -98,7 +98,7 @@ class CommandReceiverServer(Server):
                 val1 = (command_int >> 14) & 0b11111111111111  # следующие 14 битов - val1, биты 14-27 (14 бит)
                 val2 = command_int & 0b11111111111111  # оставшиеся 14 битов - val2, биты 0-13 (14 бит)
                 self.process(action, val1, val2)
-        except (SocketTransceiverError, ConnectionResetError) as e:
+        except (SocketTransceiverError, ConnectionResetError, ConnectionAbortedError) as e:
             print(f"{self.name}: {e}")
             print(f"{self.name}: end client_loop.")
         except Exception as e:

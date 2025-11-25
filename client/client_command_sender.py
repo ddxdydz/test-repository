@@ -10,7 +10,7 @@ from client.command_sending_tools.KeyboardRecorder import KeyboardRecorder
 from client.command_sending_tools.MouseRecorder import MouseRecorder
 
 
-class ClientCommandSender:
+class CommandSenderClient:
     def __init__(self, server_host, server_port=8888):
         self.name = self.__class__.__name__
         self._server_host = server_host
@@ -27,8 +27,8 @@ class ClientCommandSender:
         self.mouse_listener = None
 
     @staticmethod
-    def reset_calibration_xy(window_x: int, window_y: int) -> None:
-        MouseRecorder.reset_calibration_xy(window_x, window_y)
+    def reset_calibration_xy(global_x: int, global_y: int, window_x: int = 0, window_y: int = 0) -> None:
+        MouseRecorder.reset_calibration_xy(window_x - global_x, window_y - global_y)
 
     def connect(self):
         self._socket_transceiver.connect((self._server_host, self._server_port))
@@ -72,7 +72,8 @@ class ClientCommandSender:
 
 
 if __name__ == "__main__":
-    recorder = ClientCommandSender('localhost', 8000)
+    recorder = CommandSenderClient('localhost', 8000)
+    recorder.reset_calibration_xy(588, 182, 472, 80)
     recorder.connect()
     recorder.start()
     print(pyautogui.size())

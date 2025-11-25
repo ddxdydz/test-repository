@@ -17,6 +17,7 @@ class ScreenReceiverClient:
         self.name = self.__class__.__name__
         self._server_host = server_host
         self._server_port = server_port
+
         _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         _socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         _socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -24,6 +25,7 @@ class ScreenReceiverClient:
         _socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
         self._socket_transceiver = SocketTransceiver(_socket)
         self._socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
+
         self.width, self.height = 1, 1
         self.colors, self.scale_percent = colors, scale_percent
         self.tools_manager = ToolsManager()

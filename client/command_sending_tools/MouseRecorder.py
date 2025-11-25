@@ -17,11 +17,10 @@ class MouseRecorder:
     CALIBRATION_XY_LOCK = threading.Lock()
 
     @staticmethod
-    def reset_calibration_xy(window_x: int, window_y: int) -> None:
+    def reset_calibration_xy(calibration_x: int, calibration_y: int) -> None:
         with MouseRecorder.CALIBRATION_XY_LOCK:
-            global_x, global_y = pyautogui.position()
-            MouseRecorder.CALIBRATION_X = window_x - global_x
-            MouseRecorder.CALIBRATION_Y = window_y - global_y
+            MouseRecorder.CALIBRATION_X = calibration_x
+            MouseRecorder.CALIBRATION_Y = calibration_y
 
     @staticmethod
     def _calibrate_xy(x: int, y: int) -> Tuple[int, int]:

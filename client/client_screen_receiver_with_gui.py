@@ -1,43 +1,11 @@
 import threading
-from enum import Enum
-from typing import List
+from time import strftime
 
+import pyautogui
 import pygame
 
 from basic.network.tools.time_ms import time_ms
 from client.client_screen_receiver import ScreenReceiverClient
-
-FPS = 30
-HOSTS = ['localhost', '158.160.182.121']
-CURRENT_HOST = HOSTS[0]
-PORTS = {"client_screen_receiver": 8888, "client_command_sender": 8888}
-SCREEN_COLORS = 3
-SCREEN_SCALE_PERCENT = 80
-
-
-class State(Enum):
-    INACTIVE = 0
-    ONLY_COMMAND_SENDING = 1
-    ACTIVE = 2
-
-    def get_next_stage(self) -> Enum:
-        return State((self.value + 1) % 3)
-
-
-def get_metrics_str_list(index, screenshotted_time_ms, encoded_time_ms, received_time_ms, size) -> List[str]:
-    encode_delay = encoded_time_ms - screenshotted_time_ms
-    network_delay = received_time_ms - encoded_time_ms
-    decode_delay = time_ms() - received_time_ms
-    network_speed = round(size * 8 / 1024 / (network_delay / 1000), 3) if network_delay != 0 else "-"
-    metrics_str_list = [
-        f"{index} = {size} B",
-        f"delay: {time_ms() - screenshotted_time_ms} ms",
-        f"encode: {encode_delay} ms",
-        f"network: {network_delay} ms",
-        f"decode: {decode_delay} ms",
-        f"{network_speed}kbit/s"
-    ]
-    return metrics_str_list
 
 
 def process_screen_receiving():
@@ -52,6 +20,7 @@ def process_screen_receiving():
                     "screenshotted_time_ms": recv["screenshotted_time_ms"],
                     "encoded_time_ms": recv["encoded_time_ms"],
                     "received_time_ms": recv["received_time_ms"],
+                    "decoded_time_ms": time_ms(),
                     "size": recv["size"]
                 },
                 "cursor_x": recv["cursor_x"],
@@ -65,14 +34,39 @@ def process_screen_receiving():
         raise ex
 
 
+def process_metrics_caption(
+        index, size,
+        last_blit_delay, blit_time_ms,
+        last_screen_delay, screenshotted_time_ms,
+        encoded_time_ms, decoded_time_ms, received_time_ms
+):
+    encode_delay = encoded_time_ms - screenshotted_time_ms
+    network_delay = received_time_ms - encoded_time_ms
+    decode_delay = decoded_time_ms - received_time_ms
+    network_speed = round(size * 8 / 1024 / (network_delay / 1000), 3) if network_delay != 0 else "-"
+    metrics_str_list = [
+        f"{index} = {size} B",
+        f"FPS: {1000 / last_blit_delay if last_screen_delay else 999:.2f}",
+        # f"delay({time_ms() - screenshotted_time_ms}): {last_screen_delay} ms",
+        f"delay: {last_screen_delay} ms",
+        # f"blit_delay({time_ms() - blit_time_ms}): {last_blit_delay} ms",
+        f"blit_delay: {last_blit_delay} ms",
+        f"basic_delay: {encode_delay + network_delay + decode_delay} ms",
+        f"encode: {encode_delay} ms",
+        f"network: {network_delay} ms",
+        f"decode: {decode_delay} ms",
+        f"{network_speed}kbit/s",
+        f"{strftime("%H:%M:%S")}"
+    ]
+    pygame.display.set_caption("   ".join(metrics_str_list))
+
+
 def process_screen_blit(last_blit_time_ms: int) -> int:
     blit_data = None
-
     with blit_data_queue_lock:
         if blit_data_queue:
             blit_data = blit_data_queue[-1]
             blit_data_queue.clear()
-
     if blit_data is None:
         return last_blit_time_ms
 
@@ -82,30 +76,19 @@ def process_screen_blit(last_blit_time_ms: int) -> int:
     pygame.draw.circle(screen, (255, 0, 0), (cursor_x, cursor_y), 5)
     pygame.draw.circle(screen, (255, 255, 255), (cursor_x, cursor_y), 2)
 
-    current_blit_time_ms = time_ms()
-    blit_delay = current_blit_time_ms - last_blit_time_ms
-    blit_data["caption_metrics"].insert(1, f"blit_delay: {blit_delay} ms")
+    blit_time_ms = time_ms()
+    current_raw_metrics["blit_time_ms"] = blit_time_ms
+    current_raw_metrics["last_blit_delay"] = blit_time_ms - last_blit_time_ms
+    current_raw_metrics["last_screen_delay"] = blit_time_ms - current_raw_metrics["screenshotted_time_ms"]
+    current_raw_metrics.update(blit_data["metrics"])
 
-    pygame.display.set_caption("   ".join(blit_data["caption_metrics"]))
-
-    return current_blit_time_ms
-
-
-def process_current_state(current_state: State):
-    if current_state == State.INACTIVE:
-        pygame.display.set_caption(State.INACTIVE.name)
-        start_receiving_event.clear()
-    elif current_state == State.ONLY_COMMAND_SENDING:
-        pygame.display.set_caption(State.ONLY_COMMAND_SENDING.name)
-        start_receiving_event.clear()
-    else:
-        start_receiving_event.set()
+    return blit_time_ms
 
 
 def main():
     clock = pygame.time.Clock()
     running = True
-    current_state = State.INACTIVE
+    is_inactive = True
     blit_time_ms = time_ms()
 
     # client_command_sender.stop()
@@ -114,38 +97,53 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE and current_state == State.INACTIVE:
+            elif event.type == pygame.KEYDOWN and is_inactive:
+                if event.key == pygame.K_ESCAPE:
                     running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 2:  # колесо
-                    # client_command_sender.reset_calibration(*pygame.mouse.get_pos())
-                    current_state = current_state.get_next_stage()
+                if event.button == 1 and is_inactive:
+                    print(*pyautogui.position(), *pygame.mouse.get_pos(), sep=", ")
+                if event.button == 2:
+                    is_inactive = not is_inactive
+                    if is_inactive:
+                        start_receiving_event.clear()
+                    else:
+                        start_receiving_event.set()
 
         blit_time_ms = process_screen_blit(blit_time_ms)
-        process_current_state(current_state)
+        process_metrics_caption(**current_raw_metrics)
         pygame.display.flip()
-        clock.tick(FPS)
+        clock.tick(30)
 
     pygame.quit()
 
 
 if __name__ == "__main__":
     pygame.init()
-    client_screen_receiver = ScreenReceiverClient(
-        CURRENT_HOST, PORTS["client_screen_receiver"], SCREEN_COLORS, SCREEN_SCALE_PERCENT
-    )
+    client_screen_receiver = ScreenReceiverClient("localhost", 8888, 3, 80)
     try:
         client_screen_receiver.connect()
 
         SCREEN_SIZE = client_screen_receiver.get_screen_size()
-        WINDOW_SIZE = (800, 400) if SCREEN_SIZE[0] > 1400 or SCREEN_SIZE[1] > 1000 else SCREEN_SIZE
+        WINDOW_SIZE = (1200, 600) if SCREEN_SIZE[0] > 1400 or SCREEN_SIZE[1] > 1000 else SCREEN_SIZE
 
         blit_data_queue = []
         blit_data_queue_lock = threading.Lock()
         start_receiving_event = threading.Event()
         process_screen_thread = threading.Thread(target=process_screen_receiving, daemon=True)
         process_screen_thread.start()
+
+        current_raw_metrics = {
+            "index": 0,
+            "size": 0,
+            "last_blit_delay": 0,
+            "blit_time_ms": 0,
+            "last_screen_delay": 0,
+            "screenshotted_time_ms": 0,
+            "encoded_time_ms": 0,
+            "received_time_ms": 0,
+            "decoded_time_ms": 0,
+        }
 
         screen = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
         main()
