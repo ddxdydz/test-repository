@@ -13,9 +13,6 @@ class Server(ABC):
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-    def close(self):
-        self.server_socket.close()
-
     @staticmethod
     def get_external_ip() -> str:
         try:
@@ -45,6 +42,7 @@ class Server(ABC):
                     self.client_loop(client_socket, address)
                 except Exception as e:
                     print(f"{self.name}: while handle_client({address}): {e}")
+                    raise e
                 finally:
                     print(f"{self.name}: Client {address} connection is terminated.")
                     client_socket.close()
@@ -52,8 +50,11 @@ class Server(ABC):
             print(f"{self.name}: {e}")
             raise e
         finally:
-            self.close()
+            self.stop()
 
     @abstractmethod
     def client_loop(self, client_socket, address):
         ...
+
+    def stop(self):
+        self.server_socket.close()

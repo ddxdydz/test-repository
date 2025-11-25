@@ -7,7 +7,7 @@ import numpy as np
 from basic.image.ToolsManager import ToolsManager
 from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
 from basic.network.size_constants import *
-from basic.network.time_ms import time_ms
+from basic.network.tools.time_ms import time_ms
 
 
 class ScreenReceiverClient:
@@ -17,12 +17,12 @@ class ScreenReceiverClient:
         self.name = self.__class__.__name__
         self._server_host = server_host
         self._server_port = server_port
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
-        self._socket_transceiver = SocketTransceiver(self._socket)
+        _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        _socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        _socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
+        _socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
+        self._socket_transceiver = SocketTransceiver(_socket)
         self._socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
         self.width, self.height = 1, 1
         self.colors, self.scale_percent = colors, scale_percent
@@ -33,7 +33,7 @@ class ScreenReceiverClient:
         return self.width, self.height
 
     def connect(self) -> bool:
-        self._socket.connect((self._server_host, self._server_port))
+        self._socket_transceiver.connect((self._server_host, self._server_port))
         print(f"{self.name}: Connected to server {self._server_host}:{self._server_port}")
         try:
             # Получение параметров экрана
@@ -79,7 +79,7 @@ class ScreenReceiverClient:
         print(f"{index_str}{time_ms()} 1: request is sent, waiting to receive...")
         received = self._socket_transceiver.recv_framed()
         result_dict = self.read_data(received)
-        # sleep(0.1)  # задержка сети
+        sleep(0.2)  # задержка сети
         result_dict["size"] = len(received)
         result_dict["received_time_ms"] = time_ms()
         print(f"{align}{time_ms()} 1: {result_dict["size"]} B is received for {time_ms() - _start_time_ms} ms!")

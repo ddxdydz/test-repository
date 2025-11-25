@@ -1,0 +1,23 @@
+from enum import Enum
+
+
+class Action(Enum):  # 16 действий максимум
+    ON_MOVE = 1
+    ON_CLICK_RELEASED_LEFT = 2
+    ON_CLICK_RELEASED_RIGHT = 3
+    ON_CLICK_PRESSED_LEFT = 4
+    ON_CLICK_PRESSED_RIGHT = 5
+    ON_SCROLL = 6
+    ON_PRESS_REGULAR = 7
+    ON_PRESS_SPECIAL = 8
+    ON_RELEASE_REGULAR = 9
+    ON_RELEASE_SPECIAL = 10
+
+
+XY_ACTIONS = (
+    Action.ON_MOVE,
+    Action.ON_CLICK_RELEASED_LEFT,
+    Action.ON_CLICK_RELEASED_RIGHT,
+    Action.ON_CLICK_PRESSED_LEFT,
+    Action.ON_CLICK_PRESSED_RIGHT,
+)

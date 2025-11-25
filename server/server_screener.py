@@ -8,7 +8,7 @@ from basic.image.ToolsManager import ToolsManager
 from basic.network.ABC_Server import Server
 from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
 from basic.network.size_constants import *
-from basic.network.time_ms import time_ms
+from basic.network.tools.time_ms import time_ms
 
 
 class ServerScreener(Server):
@@ -30,9 +30,8 @@ class ServerScreener(Server):
             colors = int.from_bytes(socket_transceiver.recv_raw(COLORS_SIZE))
             scale_percent = int.from_bytes(socket_transceiver.recv_raw(SCALE_PERCENT_SIZE))
             return ToolsManager(screen_width, screen_height, colors, scale_percent)
-        except SocketTransceiverError as e:
-            print(f"{self.name}: {e}")
-            socket_transceiver.close()
+        except Exception as e:
+            print(f"{self.name}.init_tools_manager: {e}")
             raise e
 
     @staticmethod
@@ -80,14 +79,12 @@ class ServerScreener(Server):
                 socket_transceiver.send_framed(data_to_send)
                 print(f"{align}{time_ms()} 2: {len(data_to_send)} B is sent!")
                 # tools_manager.print_encode_stats(stats)
-
         except SocketTransceiverError as e:
             print(f"{self.name}: {e}")
+            print(f"{self.name}: end client_loop.")
         except Exception as e:
             print(f"{self.name}: {e}")
             raise e
-        finally:
-            print(f"{self.name}: end client_loop.")
 
 
 if __name__ == "__main__":

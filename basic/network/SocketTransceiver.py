@@ -1,4 +1,6 @@
 import socket
+from collections.abc import Buffer
+from typing import Any
 
 
 class SocketTransceiverError(Exception):
@@ -172,6 +174,9 @@ class SocketTransceiver:
         """Устанавливает таймаут для операций с сокетом в секундах."""
         if self._socket:
             self._socket.settimeout(timeout)
+
+    def connect(self, __address: tuple[Any, ...] | str | Buffer | Buffer) -> None:
+        self._socket.connect(__address)
 
     def close(self):
         """Закрывает базовый сокет."""
