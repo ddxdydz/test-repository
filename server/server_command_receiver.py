@@ -76,7 +76,8 @@ class CommandReceiverServer(Server):
                     modifiers = self.get_current_modifiers()
                     pyautogui.keyUp(key_name)
                     if modifiers:
-                        pyautogui.hotkey(*modifiers, key_name)
+                        modifiers.append(key_name)
+                        pyautogui.hotkey(*modifiers)
                         print(self.command_comment, "+", *modifiers)
                 print(self.command_comment, action, (val1, val2), key_name)
             elif action == Action.ON_PRESS_SPECIAL:
