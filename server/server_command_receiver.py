@@ -1,4 +1,5 @@
 import socket
+from typing import List
 
 import pyautogui
 
@@ -28,6 +29,13 @@ class CommandReceiverServer(Server):
     def _check_xy_range(x: int, y: int):
         width, height = pyautogui.size()
         return 0 <= x <= width and 0 <= y <= height
+
+    def get_current_modifiers(self) -> List[str]:
+        result = []
+        for key_name, is_pressed in self._current_modifiers.items():
+            if is_pressed:
+                result.append(key_name)
+        return result
 
     def process(self, action: Action, val1: int, val2: int):
         try:
@@ -64,7 +72,12 @@ class CommandReceiverServer(Server):
             elif action == Action.ON_RELEASE_REGULAR:
                 key_name = chr(val1)
                 if self.enable_executing:
-                    pyautogui.keyUp(key_name)
+                    modifiers = self.get_current_modifiers()
+                    if modifiers:
+                        pyautogui.hotkey(key_name, *modifiers)
+                        print(self.command_comment, f"+[{modifiers}]")
+                    else:
+                        pyautogui.keyUp(key_name)
                 print(self.command_comment, action, (val1, val2), key_name)
             elif action == Action.ON_PRESS_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]

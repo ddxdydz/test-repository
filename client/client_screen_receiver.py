@@ -71,7 +71,7 @@ class ScreenReceiverClient:
         _request_time_ms = time_ms()
         self._socket_transceiver.send_raw(b"\x01")
         received = self._socket_transceiver.recv_framed()
-        sleep(0.2)  # задержка сети
+        # sleep(0.2)  # задержка сети
         _received_time_ms = time_ms()
 
         # Screen decoding
@@ -88,7 +88,6 @@ class ScreenReceiverClient:
         # Stats
         result_dict["size"] = len(received)
         result_dict["request_time_ms"] = _request_time_ms
-        result_dict["received_time_ms"] = _received_time_ms
         result_dict["received_time_ms"] = _received_time_ms
         result_dict["decoded_time_ms"] = _decode_time
 

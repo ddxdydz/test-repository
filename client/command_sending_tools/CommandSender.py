@@ -22,12 +22,6 @@ class CommandSender:
         if action == Action.ON_MOVE:
             with CommandSender.COOLDOWN_MOUSE_MOVEMENT_CHECKER_LOCK:
                 return CommandSender.COOLDOWN_MOUSE_MOVEMENT_CHECKER.check_cooldown()
-        elif action == Action.ON_PRESS_REGULAR:
-            with CommandSender.COOLDOWN_KEYBOARD_REGULAR_PRESSED_CHECKER_LOCK:
-                return CommandSender.COOLDOWN_KEYBOARD_REGULAR_PRESSED_CHECKER.check_cooldown()
-        elif action == Action.ON_PRESS_SPECIAL:
-            with CommandSender.COOLDOWN_KEYBOARD_SPECIAL_PRESSED_CHECKER_LOCK:
-                return CommandSender.COOLDOWN_KEYBOARD_SPECIAL_PRESSED_CHECKER.check_cooldown()
         return True
 
     @staticmethod
