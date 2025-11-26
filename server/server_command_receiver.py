@@ -75,12 +75,8 @@ class CommandReceiverServer(Server):
                 modifiers = self.get_current_modifiers()
                 if self.enable_executing:
                     if modifiers:
-                        # Отпускаем все клавиши в правильном порядке
-                        for modifier in modifiers:
-                            pyautogui.keyUp(modifier)
-                        pyautogui.keyUp(key_name)
-                        # Нажимаем хоткей
-                        pyautogui.hotkey(*modifiers, key_name)
+                        # Просто выполняем хоткей без лишних keyUp
+                        pyautogui.hotkey(*modifiers, key_name.lower())
                         print(self.command_comment, f"hotkey: {modifiers}+{key_name}")
                     else:
                         pyautogui.keyUp(key_name)
