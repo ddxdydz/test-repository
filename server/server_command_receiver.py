@@ -74,11 +74,10 @@ class CommandReceiverServer(Server):
                 key_name = chr(val1)
                 if self.enable_executing:
                     modifiers = self.get_current_modifiers()
+                    pyautogui.keyUp(key_name)
                     if modifiers:
-                        pyautogui.hotkey(key_name, *modifiers)
-                        print(self.command_comment, f"+[{modifiers}]")
-                    else:
-                        pyautogui.keyUp(key_name)
+                        pyautogui.hotkey(*modifiers, key_name)
+                        print(self.command_comment, "+", *modifiers)
                 print(self.command_comment, action, (val1, val2), key_name)
             elif action == Action.ON_PRESS_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]

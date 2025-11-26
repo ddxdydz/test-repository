@@ -27,11 +27,11 @@ class CommandSender:
     @staticmethod
     def _pack_command(action: Action, val1: int, val2: int) -> bytes:
         if not (0 <= action.value <= 15):
-            raise ValueError("action must be 0-15 (4 bits)")
+            raise ValueError(f"action must be 0-15 (4 bits), got {action.value}")
         if not (0 <= val1 <= 16383):  # 2^14 - 1
-            raise ValueError("val1 must be 0-16383 (14 bits)")
+            raise ValueError(f"val1 must be 0-16383 (14 bits), got {val1}")
         if not (0 <= val2 <= 16383):  # 2^14 - 1
-            raise ValueError("val2 must be 0-16383 (14 bits)")
+            raise ValueError(f"val2 must be 0-16383 (14 bits), got {val2}")
         command_int = (action.value << 28) | (val1 << 14) | val2
         return command_int.to_bytes(4, byteorder='big', signed=False)
 
