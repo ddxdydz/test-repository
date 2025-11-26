@@ -26,10 +26,8 @@ class ScreenReceiverClient:
         self._socket_transceiver = SocketTransceiver(_socket)
         self._socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
 
-        self.width, self.height = 1, 1
-        self.colors, self.scale_percent = colors, scale_percent
+        self.width, self.height, self.colors, self.scale_percent = 1, 1, colors, scale_percent
         self.tools_manager = ToolsManager()
-        self.index = 0
 
     def get_screen_size(self) -> Tuple[int, int]:
         return self.width, self.height
@@ -50,12 +48,12 @@ class ScreenReceiverClient:
             return False
         self.tools_manager = ToolsManager(self.width, self.height, self.colors, self.scale_percent)
         print(f"{self.name}: {self.tools_manager} is created!")
-        self.index = 0
         return True
 
-    def read_data(self, data: bytes) -> dict:
+    @staticmethod
+    def read_data(data: bytes) -> dict:
         result_dict = dict()
-        self.index = result_dict["index"] = int.from_bytes(data[:SCREEN_INDEX_SIZE], 'big')
+        result_dict["index"] = int.from_bytes(data[:SCREEN_INDEX_SIZE], 'big')
         offset = SCREEN_INDEX_SIZE
         result_dict["screenshotted_time_ms"] = int.from_bytes(data[offset:offset + SCREEN_TIME_SIZE], 'big')
         offset += SCREEN_TIME_SIZE
@@ -69,27 +67,28 @@ class ScreenReceiverClient:
         return result_dict
 
     def recv_screen(self) -> Dict:
-        self.index += 1
-        index_str = f"{self.index}: "
-        align = "".ljust(len(index_str))
-
-        # Sending request
+        # Sending request, Receiving
+        _request_time_ms = time_ms()
         self._socket_transceiver.send_raw(b"\x01")
-
-        # Receiving
-        _start_time_ms = time_ms()
-        print(f"{index_str}{time_ms()} 1: request is sent, waiting to receive...")
         received = self._socket_transceiver.recv_framed()
-        result_dict = self.read_data(received)
         sleep(0.2)  # задержка сети
-        result_dict["size"] = len(received)
-        result_dict["received_time_ms"] = time_ms()
-        print(f"{align}{time_ms()} 1: {result_dict["size"]} B is received for {time_ms() - _start_time_ms} ms!")
+        _received_time_ms = time_ms()
 
         # Screen decoding
-        print(f"{align}{time_ms()} 2: start decoding...")
+        result_dict = self.read_data(received)
         stats, result_dict["data"] = self.tools_manager.decode_image(result_dict["data"])
-        print(f"{align}{time_ms()} 2: screen{self.index} is decoded for {time_ms(stats["total_time"])} ms!")
+        _decode_time = time_ms()
+
+        # Debug
+        index_str = str(result_dict["index"])
+        align = "".ljust(len(index_str))
+        print(f"{f"{index_str}: "}{_received_time_ms}: {len(received)} B is received for {_received_time_ms - _request_time_ms} ms!")
+        print(f"{f"{align}: "}{_decode_time}: {len(received)} B is decoded for {time_ms(stats["total_time"])} ms!")
+
+        # Stats
+        result_dict["size"] = len(received)
+        result_dict["request_time_ms"] = _request_time_ms
+        result_dict["received_time_ms"] = _received_time_ms
 
         return result_dict
 

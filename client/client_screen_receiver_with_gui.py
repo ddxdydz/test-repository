@@ -15,16 +15,17 @@ def process_screen_receiving():
             recv = client_screen_receiver.recv_screen()
             blit_data = {
                 "screen_bytes": recv["data"].tobytes(),
+                "cursor_x": recv["cursor_x"],
+                "cursor_y": recv["cursor_y"],
                 "metrics": {
                     "index": recv["index"],
+                    "size": recv["size"],
                     "screenshotted_time_ms": recv["screenshotted_time_ms"],
                     "encoded_time_ms": recv["encoded_time_ms"],
                     "received_time_ms": recv["received_time_ms"],
-                    "decoded_time_ms": time_ms(),
-                    "size": recv["size"]
-                },
-                "cursor_x": recv["cursor_x"],
-                "cursor_y": recv["cursor_y"]
+                    "request_time_ms": recv["request_time_ms"],
+                    "decoded_time_ms": time_ms()
+                }
             }
             with blit_data_queue_lock:
                 blit_data_queue.clear()
@@ -35,24 +36,24 @@ def process_screen_receiving():
 
 
 def process_metrics_caption(
-        index, size,
-        last_blit_delay, blit_time_ms,
-        last_screen_delay, screenshotted_time_ms,
-        encoded_time_ms, decoded_time_ms, received_time_ms
+        index, size, screenshotted_time_ms, encoded_time_ms, received_time_ms, request_time_ms, decoded_time_ms,
+        fps, last_blit_delay, blit_time_ms, last_screen_delay, last_basic_delay, last_tail
 ):
     encode_delay = encoded_time_ms - screenshotted_time_ms
+    tail_delay = encoded_time_ms - request_time_ms
     network_delay = received_time_ms - encoded_time_ms
     decode_delay = decoded_time_ms - received_time_ms
     network_speed = round(size * 8 / 1024 / (network_delay / 1000), 3) if network_delay != 0 else "-"
     metrics_str_list = [
         f"{index} = {size} B",
-        f"FPS: {1000 / last_blit_delay if last_screen_delay else 999:.2f}",
-        # f"delay({time_ms() - screenshotted_time_ms}): {last_screen_delay} ms",
-        f"delay: {last_screen_delay} ms",
-        # f"blit_delay({time_ms() - blit_time_ms}): {last_blit_delay} ms",
-        f"blit_delay: {last_blit_delay} ms",
-        f"basic_delay: {encode_delay + network_delay + decode_delay} ms",
+        f"FPS: {int(fps)}",
+        f"delay({last_screen_delay}): {str(time_ms() - screenshotted_time_ms).rjust(4, '0')} ms",
+        # f"delay: {last_screen_delay} ms",
+        f"blit_delay({last_blit_delay}): {str(time_ms() - blit_time_ms).rjust(4, '0')} ms",
+        # f"blit_delay: {last_blit_delay} ms",
+        f"basic_delay({last_basic_delay}): {decoded_time_ms - screenshotted_time_ms} ms",
         f"encode: {encode_delay} ms",
+        f"tail({last_tail}): {tail_delay} ms",
         f"network: {network_delay} ms",
         f"decode: {decode_delay} ms",
         f"{network_speed}kbit/s",
@@ -80,6 +81,9 @@ def process_screen_blit(last_blit_time_ms: int) -> int:
     current_raw_metrics["blit_time_ms"] = blit_time_ms
     current_raw_metrics["last_blit_delay"] = blit_time_ms - last_blit_time_ms
     current_raw_metrics["last_screen_delay"] = blit_time_ms - current_raw_metrics["screenshotted_time_ms"]
+    current_raw_metrics["last_basic_delay"] = (
+            current_raw_metrics["decoded_time_ms"] - current_raw_metrics["screenshotted_time_ms"])
+    current_raw_metrics["last_tail"] = current_raw_metrics["encoded_time_ms"] - current_raw_metrics["request_time_ms"]
     current_raw_metrics.update(blit_data["metrics"])
 
     return blit_time_ms
@@ -111,9 +115,10 @@ def main():
                         start_receiving_event.set()
 
         blit_time_ms = process_screen_blit(blit_time_ms)
+        current_raw_metrics["fps"] = clock.get_fps()
         process_metrics_caption(**current_raw_metrics)
         pygame.display.flip()
-        clock.tick(30)
+        clock.tick(15)
 
     pygame.quit()
 
@@ -136,13 +141,17 @@ if __name__ == "__main__":
         current_raw_metrics = {
             "index": 0,
             "size": 0,
+            "screenshotted_time_ms": 0,
+            "encoded_time_ms": 0,
+            "request_time_ms": 0,
+            "received_time_ms": 0,
+            "decoded_time_ms": 0,
+            "fps": 0,
             "last_blit_delay": 0,
             "blit_time_ms": 0,
             "last_screen_delay": 0,
-            "screenshotted_time_ms": 0,
-            "encoded_time_ms": 0,
-            "received_time_ms": 0,
-            "decoded_time_ms": 0,
+            "last_basic_delay": 0,
+            "last_tail": 0
         }
 
         screen = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)

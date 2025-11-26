@@ -6,13 +6,14 @@ import pyautogui
 
 from basic.image.ToolsManager import ToolsManager
 from basic.network.ABC_Server import Server
-from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
+from basic.network.SocketTransceiver import SocketTransceiver, TimeoutSocketTransceiverError, SocketTransceiverError
 from basic.network.size_constants import *
 from basic.network.tools.time_ms import time_ms
 
 
 class ServerScreener(Server):
     SOCKET_TIMEOUT = 10
+    SOCKET_REQUEST_TIMEOUT = 0.010
 
     def __init__(self, host='0.0.0.0', port=8888):
         super().__init__(host, port)
@@ -60,25 +61,30 @@ class ServerScreener(Server):
             index = 0
             while True:
                 index += 1
-                index_str = f"{index}: "
-                align = "".ljust(len(index_str))
-
-                # Waiting for request
-                print(f"{index_str}{time_ms()} 0: waiting for request...")
-                socket_transceiver.set_timeout(None)
-                socket_transceiver.recv_raw(1)
-                socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
 
                 # Screen encoding
-                print(f"{align}{time_ms()} 1: request is received, start encoding...")
-                _encode_delta_time_ms, stats, reference, data_to_send = self.prepare_data_to_send(index, tools_manager)
+                _encode_delta_ms, stats, reference, data_to_send = self.prepare_data_to_send(index, tools_manager)
+                _encoded_time_ms = time_ms()
+
+                # Waiting for request
+                socket_transceiver.set_timeout(self.SOCKET_REQUEST_TIMEOUT)
+                try:
+                    socket_transceiver.recv_raw(1)
+                except TimeoutSocketTransceiverError:
+                    continue
+                socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
                 tools_manager.update_reference(reference)
-                print(f"{align}{time_ms()} 1: screen is encoded for {_encode_delta_time_ms} ms!")
 
                 # Sending
                 socket_transceiver.send_framed(data_to_send)
-                print(f"{align}{time_ms()} 2: {len(data_to_send)} B is sent!")
-                # tools_manager.print_encode_stats(stats)
+                _sent_time_ms = time_ms()
+
+                # Debug
+                index_str = f"{index}: "
+                align = "".ljust(len(index_str))
+                print(f"{index_str}{_encoded_time_ms}: Encoded for {_encode_delta_ms} ms")
+                print(f"{align}{_sent_time_ms}: {len(data_to_send)} B is sent!")
+
         except (SocketTransceiverError, ConnectionResetError, ConnectionAbortedError) as e:
             print(f"{self.name}: {e}")
             print(f"{self.name}: end client_loop.")
