@@ -74,7 +74,7 @@ class CommandSenderClient:
 if __name__ == "__main__":
     recorder = CommandSenderClient("158.160.202.50", 8000)
     recorder.reset_calibration_xy(
-        1215, 326, 597, 220
+        926, 688, 287, 657
     )
     recorder.connect()
     recorder.start()

@@ -71,15 +71,20 @@ class CommandReceiverServer(Server):
                     pyautogui.keyDown(key_name)
                 print(self.command_comment, action, (val1, val2), key_name)
             elif action == Action.ON_RELEASE_REGULAR:
-                key_name = str(chr(val1))
+                key_name = chr(val1)
+                modifiers = self.get_current_modifiers()
                 if self.enable_executing:
-                    modifiers = self.get_current_modifiers()
-                    pyautogui.keyUp(key_name)
                     if modifiers:
-                        modifiers.append(key_name)
-                        pyautogui.hotkey(*modifiers)
-                        print(self.command_comment, f"+{key_name}", modifiers)
-                print(self.command_comment, action, (val1, val2), key_name)
+                        # Отпускаем все клавиши в правильном порядке
+                        for modifier in modifiers:
+                            pyautogui.keyUp(modifier)
+                        pyautogui.keyUp(key_name)
+                        # Нажимаем хоткей
+                        pyautogui.hotkey(*modifiers, key_name)
+                        print(self.command_comment, f"hotkey: {modifiers}+{key_name}")
+                    else:
+                        pyautogui.keyUp(key_name)
+                        print(self.command_comment, action, (val1, val2), key_name)
             elif action == Action.ON_PRESS_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]
                 if key_name in self._current_modifiers.keys():
