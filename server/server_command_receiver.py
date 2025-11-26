@@ -32,9 +32,10 @@ class CommandReceiverServer(Server):
 
     def get_current_modifiers(self) -> List[str]:
         result = []
-        for key_name, is_pressed in self._current_modifiers.items():
-            if is_pressed:
-                result.append(key_name)
+        if self._current_modifiers['ctrl_l'] or self._current_modifiers['ctrl_r']:
+            result.append('ctrl')
+        if self._current_modifiers['alt_l'] or self._current_modifiers['alt_r']:
+            result.append('alt')
         return result
 
     def process(self, action: Action, val1: int, val2: int):
