@@ -107,5 +107,5 @@ class CommandReceiverServer(Server):
 
 
 if __name__ == "__main__":
-    server = CommandReceiverServer(port=8000, enable_executing=False)
+    server = CommandReceiverServer(port=8000, enable_executing=True)
     server.start()

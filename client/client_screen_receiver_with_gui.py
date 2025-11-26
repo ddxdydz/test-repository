@@ -117,7 +117,7 @@ def main():
 
 if __name__ == "__main__":
     pygame.init()
-    client_screen_receiver = ScreenReceiverClient("localhost", 8888, 3, 80)
+    client_screen_receiver = ScreenReceiverClient("158.160.202.50", 8888, 3, 80)
     try:
         client_screen_receiver.connect()
 
