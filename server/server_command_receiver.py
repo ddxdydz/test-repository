@@ -67,20 +67,22 @@ class CommandReceiverServer(Server):
                 print(self.command_comment, action, (val1 - 1, val2 - 1), pyautogui.position())
             elif action == Action.ON_PRESS_REGULAR:
                 key_name = chr(val1)
-                if self.enable_executing:
-                    pyautogui.keyDown(key_name)
-                print(self.command_comment, action, (val1, val2), key_name)
-            elif action == Action.ON_RELEASE_REGULAR:
-                key_name = chr(val1)
                 modifiers = self.get_current_modifiers()
+
                 if self.enable_executing:
                     if modifiers:
-                        # Просто выполняем хоткей без лишних keyUp
+                        # Немедленно выполняем хоткей
                         pyautogui.hotkey(*modifiers, key_name.lower())
                         print(self.command_comment, f"hotkey: {modifiers}+{key_name}")
                     else:
-                        pyautogui.keyUp(key_name)
+                        pyautogui.keyDown(key_name)
                         print(self.command_comment, action, (val1, val2), key_name)
+
+            elif action == Action.ON_RELEASE_REGULAR:
+                key_name = chr(val1)
+                if self.enable_executing and not self.get_current_modifiers():
+                    pyautogui.keyUp(key_name)
+                print(self.command_comment, action, (val1, val2), key_name)
             elif action == Action.ON_PRESS_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]
                 if key_name in self._current_modifiers.keys():
