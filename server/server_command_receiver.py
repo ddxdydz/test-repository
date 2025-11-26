@@ -71,7 +71,7 @@ class CommandReceiverServer(Server):
                     pyautogui.keyDown(key_name)
                 print(self.command_comment, action, (val1, val2), key_name)
             elif action == Action.ON_RELEASE_REGULAR:
-                key_name = chr(val1)
+                key_name = str(chr(val1))
                 if self.enable_executing:
                     modifiers = self.get_current_modifiers()
                     pyautogui.keyUp(key_name)
