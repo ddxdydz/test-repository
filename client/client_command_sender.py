@@ -73,9 +73,11 @@ class CommandSenderClient:
 
 if __name__ == "__main__":
     recorder = CommandSenderClient("158.160.202.50", 8000)
-    recorder.reset_calibration_xy(753, 120, 144, 40)
+    recorder.reset_calibration_xy(
+        1023, 338, 397, 243
+    )
     recorder.connect()
     recorder.start()
     print(pyautogui.size())
     while True:
-        time.sleep(0.1)
+        pass

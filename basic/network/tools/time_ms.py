@@ -7,3 +7,7 @@ def time_ms(value: Optional[float] = None) -> int:
     if value is None:
         value = time()
     return int(value * 1000)
+
+
+if __name__ == "__main__":
+    print(time_ms())
