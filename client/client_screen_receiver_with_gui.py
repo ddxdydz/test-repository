@@ -45,9 +45,9 @@ def process_metrics_caption(
         # f"blit_delay: {last_blit_delay} ms",
         f"basic_delay({last_basic_delay}): {decoded_time_ms - screenshotted_time_ms} ms",
         f"encode: {encode_delay} ms",
-        f"tail({last_tail}): {tail_delay} ms",
         f"network: {network_delay} ms",
         f"decode: {decode_delay} ms",
+        f"tail({last_tail}): {tail_delay} ms",
         f"{network_speed}kbit/s",
         f"{strftime("%H:%M:%S")}"
     ]
@@ -131,19 +131,8 @@ if __name__ == "__main__":
         process_screen_thread.start()
 
         current_raw_metrics = {
-            "index": 0,
-            "size": 0,
-            "screenshotted_time_ms": 0,
-            "encoded_time_ms": 0,
-            "request_time_ms": 0,
-            "received_time_ms": 0,
-            "decoded_time_ms": 0,
-            "fps": 0,
-            "last_blit_delay": 0,
-            "blit_time_ms": 0,
-            "last_screen_delay": 0,
-            "last_basic_delay": 0,
-            "last_tail": 0
+            "index": 0, "size": 0, "screenshotted_time_ms": 0, "encoded_time_ms": 0, "request_time_ms": 0, "received_time_ms": 0, "decoded_time_ms": 0,
+            "fps": 0, "last_blit_delay": 0, "blit_time_ms": 0, "last_screen_delay": 0, "last_basic_delay": 0, "last_tail": 0
         }
 
         screen = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
