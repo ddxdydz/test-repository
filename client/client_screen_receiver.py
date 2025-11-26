@@ -83,12 +83,14 @@ class ScreenReceiverClient:
         index_str = str(result_dict["index"])
         align = "".ljust(len(index_str))
         print(f"{f"{index_str}: "}{_received_time_ms}: {len(received)} B is received for {_received_time_ms - _request_time_ms} ms!")
-        print(f"{f"{align}: "}{_decode_time}: {len(received)} B is decoded for {time_ms(stats["total_time"])} ms!")
+        print(f"{f"{align}  "}{_decode_time}: {len(received)} B is decoded for {time_ms(stats["total_time"])} ms!")
 
         # Stats
         result_dict["size"] = len(received)
         result_dict["request_time_ms"] = _request_time_ms
         result_dict["received_time_ms"] = _received_time_ms
+        result_dict["received_time_ms"] = _received_time_ms
+        result_dict["decoded_time_ms"] = _decode_time
 
         return result_dict
 

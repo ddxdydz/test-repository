@@ -14,18 +14,10 @@ def process_screen_receiving():
             start_receiving_event.wait()
             recv = client_screen_receiver.recv_screen()
             blit_data = {
-                "screen_bytes": recv["data"].tobytes(),
-                "cursor_x": recv["cursor_x"],
-                "cursor_y": recv["cursor_y"],
-                "metrics": {
-                    "index": recv["index"],
-                    "size": recv["size"],
-                    "screenshotted_time_ms": recv["screenshotted_time_ms"],
-                    "encoded_time_ms": recv["encoded_time_ms"],
-                    "received_time_ms": recv["received_time_ms"],
-                    "request_time_ms": recv["request_time_ms"],
-                    "decoded_time_ms": time_ms()
-                }
+                "screen_bytes": recv.pop("data").tobytes(),
+                "cursor_x": recv.pop("cursor_x"),
+                "cursor_y": recv.pop("cursor_y"),
+                "metrics": recv
             }
             with blit_data_queue_lock:
                 blit_data_queue.clear()
