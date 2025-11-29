@@ -5,7 +5,7 @@ import pyautogui
 
 from basic.network.ABC_Server import Server
 from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
-from basic.network.actions_transfer.Action import Action
+from basic.network.actions_transfer.Action import Action, XY_ACTIONS
 from basic.network.actions_transfer.key_maps import KEY_MAP_NUM_TO_NAME
 
 
@@ -39,24 +39,26 @@ class CommandReceiverServer(Server):
         return result
 
     def process(self, action: Action, val1: int, val2: int):
+        if action in XY_ACTIONS and not self._check_xy_range(val1, val2):
+            print(f"The command's coordinates are out of range: {action}, {(val1, val2)}")
         try:
-            if action == Action.ON_MOVE and self._check_xy_range(val1, val2):
+            if action == Action.ON_MOVE:
                 if self.enable_executing:
                     pyautogui.moveTo(val1, val2)
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
-            elif action == Action.ON_CLICK_RELEASED_LEFT and self._check_xy_range(val1, val2):
+            elif action == Action.ON_CLICK_RELEASED_LEFT:
                 if self.enable_executing:
                     pyautogui.mouseUp(val1, val2, button='left')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
-            elif action == Action.ON_CLICK_RELEASED_RIGHT and self._check_xy_range(val1, val2):
+            elif action == Action.ON_CLICK_RELEASED_RIGHT:
                 if self.enable_executing:
                     pyautogui.mouseUp(val1, val2, button='right')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
-            elif action == Action.ON_CLICK_PRESSED_LEFT and self._check_xy_range(val1, val2):
+            elif action == Action.ON_CLICK_PRESSED_LEFT:
                 if self.enable_executing:
                     pyautogui.mouseDown(val1, val2, button='left')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
-            elif action == Action.ON_CLICK_PRESSED_RIGHT and self._check_xy_range(val1, val2):
+            elif action == Action.ON_CLICK_PRESSED_RIGHT:
                 if self.enable_executing:
                     pyautogui.mouseDown(val1, val2, button='right')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
@@ -68,7 +70,6 @@ class CommandReceiverServer(Server):
             elif action == Action.ON_PRESS_REGULAR:
                 key_name = chr(val1)
                 modifiers = self.get_current_modifiers()
-
                 if self.enable_executing:
                     if modifiers:
                         # Немедленно выполняем хоткей
@@ -77,7 +78,6 @@ class CommandReceiverServer(Server):
                     else:
                         pyautogui.keyDown(key_name)
                         print(self.command_comment, action, (val1, val2), key_name)
-
             elif action == Action.ON_RELEASE_REGULAR:
                 key_name = chr(val1)
                 if self.enable_executing and not self.get_current_modifiers():
@@ -106,6 +106,9 @@ class CommandReceiverServer(Server):
     def client_loop(self, client_socket, address):
         socket_transceiver = SocketTransceiver(client_socket)
         socket_transceiver.set_timeout(None)
+        self.enable_executing = int.from_bytes(socket_transceiver.recv_raw(1)) == 1
+        self.command_comment = "executed: " if self.enable_executing else "passed: "
+        print("Executing is", "enabled." if self.enable_executing else "disabled.")
         print(f"{self.name}: start client_loop.")
         try:
             while True:
@@ -124,5 +127,5 @@ class CommandReceiverServer(Server):
 
 
 if __name__ == "__main__":
-    server = CommandReceiverServer(port=8000, enable_executing=True)
+    server = CommandReceiverServer(port=8000)
     server.start()

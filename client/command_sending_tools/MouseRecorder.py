@@ -14,18 +14,22 @@ class MouseRecorder:
     SCREEN_SIZE_LOCK = threading.Lock()
 
     CALIBRATION_X, CALIBRATION_Y = 0, 0
+    SCALE_X, SCALE_Y = 1, 1
     CALIBRATION_XY_LOCK = threading.Lock()
 
     @staticmethod
-    def reset_calibration_xy(calibration_x: int, calibration_y: int) -> None:
+    def reset_calibration_xy(calibration_x: int = 0, calibration_y: int = 0,
+                             scale_x: float = 1, scale_y: float = 1) -> None:
         with MouseRecorder.CALIBRATION_XY_LOCK:
-            MouseRecorder.CALIBRATION_X = calibration_x
-            MouseRecorder.CALIBRATION_Y = calibration_y
+            MouseRecorder.CALIBRATION_X, MouseRecorder.CALIBRATION_Y = calibration_x, calibration_y
+            MouseRecorder.SCALE_X, MouseRecorder.SCALE_Y = scale_x, scale_y
 
     @staticmethod
     def _calibrate_xy(x: int, y: int) -> Tuple[int, int]:
         with MouseRecorder.CALIBRATION_XY_LOCK:
-            return x + MouseRecorder.CALIBRATION_X, y + MouseRecorder.CALIBRATION_Y
+            c_x = int((x + MouseRecorder.CALIBRATION_X) * MouseRecorder.SCALE_X)
+            c_y = int((y + MouseRecorder.CALIBRATION_Y) * MouseRecorder.SCALE_Y)
+            return c_x, c_y
 
     @staticmethod
     def _check_xy_range(x: int, y: int):
@@ -48,6 +52,8 @@ class MouseRecorder:
             action = Action.ON_CLICK_PRESSED_LEFT if pressed else Action.ON_CLICK_RELEASED_LEFT
         elif button == Button.right:
             action = Action.ON_CLICK_PRESSED_RIGHT if pressed else Action.ON_CLICK_RELEASED_RIGHT
+        elif button == Button.middle:
+            action = Action.ON_CLICK_PRESSED_MIDDLE if pressed else Action.ON_CLICK_RELEASED_MIDDLE
         else:
             return True
         CommandSender.send_command(action, cx, cy)

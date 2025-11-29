@@ -1,6 +1,8 @@
 import threading
 from typing import Optional
 
+import pyautogui
+
 from basic.network.SocketTransceiver import SocketTransceiver
 from basic.network.actions_transfer.Action import Action
 from basic.network.tools.CooldownChecker import CooldownChecker
@@ -9,6 +11,8 @@ from basic.network.tools.CooldownChecker import CooldownChecker
 class CommandSender:
     SOCKET_TRANSCEIVER: Optional[SocketTransceiver] = None
     SOCKET_TRANSCEIVER_LOCK = threading.Lock()
+
+    STOP_EVENT = threading.Event()
 
     COOLDOWN_MOUSE_MOVEMENT_CHECKER = CooldownChecker(200)
     COOLDOWN_MOUSE_MOVEMENT_CHECKER_LOCK = threading.Lock()
@@ -25,6 +29,16 @@ class CommandSender:
         return True
 
     @staticmethod
+    def _process_stop_event(action: Action):
+        if action == Action.ON_CLICK_PRESSED_MIDDLE:
+            if CommandSender.STOP_EVENT.is_set():
+                CommandSender.STOP_EVENT.clear()
+                print("CommandSender: started")
+            else:
+                CommandSender.STOP_EVENT.set()
+                print("CommandSender: stopped")
+
+    @staticmethod
     def _pack_command(action: Action, val1: int, val2: int) -> bytes:
         if not (0 <= action.value <= 15):
             raise ValueError(f"action must be 0-15 (4 bits), got {action.value}")
@@ -37,6 +51,11 @@ class CommandSender:
 
     @staticmethod
     def send_command(action: Action, val1: int, val2: int) -> None:
+        CommandSender._process_stop_event(action)
+        if CommandSender.STOP_EVENT.is_set():
+            if action == Action.ON_CLICK_PRESSED_RIGHT:
+                print(*pyautogui.position())
+            return
         if not CommandSender._check_cooldown(action):
             return
         with CommandSender.SOCKET_TRANSCEIVER_LOCK:

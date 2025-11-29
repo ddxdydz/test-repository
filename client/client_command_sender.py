@@ -1,5 +1,6 @@
 import socket
 import time
+from typing import Tuple
 
 import pyautogui
 from pynput import keyboard, mouse
@@ -11,7 +12,7 @@ from client.command_sending_tools.MouseRecorder import MouseRecorder
 
 
 class CommandSenderClient:
-    def __init__(self, server_host, server_port=8888):
+    def __init__(self, server_host, server_port, enable_executing: bool):
         self.name = self.__class__.__name__
         self._server_host = server_host
         self._server_port = server_port
@@ -23,17 +24,40 @@ class CommandSenderClient:
         _socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8)
         self._socket_transceiver = SocketTransceiver(_socket)
 
+        self.enable_executing = enable_executing
+
         self.keyboard_listener = None
         self.mouse_listener = None
 
     @staticmethod
-    def reset_calibration_xy(global_x: int, global_y: int, window_x: int = 0, window_y: int = 0) -> None:
-        MouseRecorder.reset_calibration_xy(window_x - global_x, window_y - global_y)
+    def reset_calibration_xy(window_x: int, window_y: int, remote_x: int = 0, remote_y: int = 0) -> None:
+        MouseRecorder.reset_calibration_xy(remote_x - window_x, remote_y - window_y)
+
+    @staticmethod
+    def reset_calibration_by_corners(
+            window_left_upper_x: int, window_left_upper_y: int,
+            window_lower_right_x: int, window_lower_right_y: int,
+            remote_width: int, remote_height: int) -> None:
+        if remote_width < 1:
+            raise ValueError(f"CommandSenderClient: remote_width must be positive, got {remote_width}")
+        if remote_height < 1:
+            raise ValueError(f"CommandSenderClient: remote_height must be positive, got {remote_height}")
+        window_width = window_lower_right_x - window_left_upper_x
+        window_height = window_lower_right_y - window_left_upper_y
+        if window_width < 1:
+            raise ValueError(f"CommandSenderClient: window_width({window_lower_right_x} - {window_left_upper_x}) < 1")
+        if window_height < 1:
+            raise ValueError(f"CommandSenderClient: window_height({window_lower_right_y} - {window_left_upper_y}) < 1")
+        MouseRecorder.reset_calibration_xy(
+            calibration_x=window_left_upper_x, calibration_y=window_lower_right_y,
+            scale_x=window_width / remote_width, scale_y=window_height / remote_height
+        )
 
     def connect(self):
         self._socket_transceiver.connect((self._server_host, self._server_port))
         with CommandSender.SOCKET_TRANSCEIVER_LOCK:
             CommandSender.SOCKET_TRANSCEIVER = self._socket_transceiver
+        CommandSender.SOCKET_TRANSCEIVER.send_raw(b"\x01" if self.enable_executing else b"\x00")
         print(f"{self.name}: Connected to server {self._server_host}:{self._server_port}")
 
     def close(self):
@@ -72,12 +96,12 @@ class CommandSenderClient:
 
 
 if __name__ == "__main__":
-    recorder = CommandSenderClient("158.160.202.50", 8000)
-    recorder.reset_calibration_xy(
-        926, 688, 287, 657
-    )
+    recorder = CommandSenderClient("localhost", 8000, False)
+    # recorder.reset_calibration_xy(
+    #     341, 218, 15, 18
+    # )
     recorder.connect()
     recorder.start()
-    print(pyautogui.size())
+    # print(pyautogui.size())
     while True:
         pass

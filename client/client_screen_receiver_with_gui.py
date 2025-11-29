@@ -117,7 +117,7 @@ def main():
 
 if __name__ == "__main__":
     pygame.init()
-    client_screen_receiver = ScreenReceiverClient("158.160.202.50", 8888, 3, 80)
+    client_screen_receiver = ScreenReceiverClient("158.160.202.50", 8888, 4, 80)
     try:
         client_screen_receiver.connect()
 
@@ -143,14 +143,3 @@ if __name__ == "__main__":
     finally:
         client_screen_receiver.close()
         print("client_screen_receiver closed.")
-
-
-# if current_state != State.INACTIVE and not client_command_sender.is_recording:
-#     client_command_sender.start()
-# if current_state == State.INACTIVE and client_command_sender.is_recording:
-#     client_command_sender.stop()
-# client_command_sender = CommandRecorderClient(current_host, port_2)
-# client_command_sender.SCREEN_SIZE[0], client_command_sender.SCREEN_SIZE[1] = SCREEN_SIZE
-# client_command_sender.connect()
-# client_command_sender.close()
-# print("client_command_sender closed.")
