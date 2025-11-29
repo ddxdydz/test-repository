@@ -64,7 +64,10 @@ class MouseRecorder:
 
     @staticmethod
     def on_scroll(x: int, y: int, dx: int, dy: int) -> bool:
-        CommandSender.send_command(Action.ON_SCROLL, dx + 1, dy + 1)  # отрицательные значения не передаются
+        dx, dy = dx + 1, dy + 1  # отрицательные значения не передаются
+        if dx < 0 or dy < 0:
+            return True
+        CommandSender.send_command(Action.ON_SCROLL, dx, dy)
         return True
 
 

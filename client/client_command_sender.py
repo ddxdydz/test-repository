@@ -31,26 +31,6 @@ class CommandSenderClient:
     def reset_calibration_xy(window_x: int, window_y: int, remote_x: int = 0, remote_y: int = 0) -> None:
         MouseRecorder.reset_calibration_xy(remote_x - window_x, remote_y - window_y)
 
-    @staticmethod
-    def reset_calibration_by_corners(
-            window_left_upper_x: int, window_left_upper_y: int,
-            window_lower_right_x: int, window_lower_right_y: int,
-            remote_width: int, remote_height: int) -> None:
-        if remote_width < 1:
-            raise ValueError(f"CommandSenderClient: remote_width must be positive, got {remote_width}")
-        if remote_height < 1:
-            raise ValueError(f"CommandSenderClient: remote_height must be positive, got {remote_height}")
-        window_width = window_lower_right_x - window_left_upper_x
-        window_height = window_lower_right_y - window_left_upper_y
-        if window_width < 1:
-            raise ValueError(f"CommandSenderClient: window_width({window_lower_right_x} - {window_left_upper_x}) < 1")
-        if window_height < 1:
-            raise ValueError(f"CommandSenderClient: window_height({window_lower_right_y} - {window_left_upper_y}) < 1")
-        MouseRecorder.reset_calibration_xy(
-            calibration_x=-window_left_upper_x, calibration_y=-window_left_upper_y,
-            scale_x=window_width / remote_width, scale_y=window_height / remote_height
-        )
-
     def connect(self):
         self._socket_transceiver.connect((self._server_host, self._server_port))
         with CommandSender.SOCKET_TRANSCEIVER_LOCK:
@@ -98,11 +78,7 @@ if __name__ == "__main__":
     recorder.reset_calibration_xy(
         709, 372, 389, 216
     )
-    recorder.reset_calibration_by_corners(
-        *(328, 210),
-        *(1590, 967),
-        *(1280, 768)
-    )
+    recorder.reset_calibration_xy(329, 210)
     recorder.connect()
     recorder.start()
     # print(pyautogui.size())
