@@ -1,14 +1,12 @@
 import socket
-import time
-from typing import Tuple
 
-import pyautogui
 from pynput import keyboard, mouse
 
 from basic.network.SocketTransceiver import SocketTransceiver
 from client.command_sending_tools.CommandSender import CommandSender
 from client.command_sending_tools.KeyboardRecorder import KeyboardRecorder
 from client.command_sending_tools.MouseRecorder import MouseRecorder
+from client.settings import *
 
 
 class CommandSenderClient:
@@ -49,7 +47,7 @@ class CommandSenderClient:
         if window_height < 1:
             raise ValueError(f"CommandSenderClient: window_height({window_lower_right_y} - {window_left_upper_y}) < 1")
         MouseRecorder.reset_calibration_xy(
-            calibration_x=window_left_upper_x, calibration_y=window_lower_right_y,
+            calibration_x=-window_left_upper_x, calibration_y=-window_left_upper_y,
             scale_x=window_width / remote_width, scale_y=window_height / remote_height
         )
 
@@ -96,10 +94,15 @@ class CommandSenderClient:
 
 
 if __name__ == "__main__":
-    recorder = CommandSenderClient("localhost", 8000, False)
-    # recorder.reset_calibration_xy(
-    #     341, 218, 15, 18
-    # )
+    recorder = CommandSenderClient(HOST, PORT_COMMAND_SERVER, True)
+    recorder.reset_calibration_xy(
+        709, 372, 389, 216
+    )
+    recorder.reset_calibration_by_corners(
+        *(328, 210),
+        *(1590, 967),
+        *(1280, 768)
+    )
     recorder.connect()
     recorder.start()
     # print(pyautogui.size())

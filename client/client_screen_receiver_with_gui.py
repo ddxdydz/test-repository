@@ -6,6 +6,7 @@ import pygame
 
 from basic.network.tools.time_ms import time_ms
 from client.client_screen_receiver import ScreenReceiverClient
+from client.settings import *
 
 
 def process_screen_receiving():
@@ -117,7 +118,7 @@ def main():
 
 if __name__ == "__main__":
     pygame.init()
-    client_screen_receiver = ScreenReceiverClient("158.160.202.50", 8888, 4, 80)
+    client_screen_receiver = ScreenReceiverClient(HOST, PORT_SCREEN_SERVER, COLORS, SCALE_PERCENT)
     try:
         client_screen_receiver.connect()
 

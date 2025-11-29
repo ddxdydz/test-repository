@@ -1,8 +1,6 @@
 import threading
 from typing import Optional
 
-import pyautogui
-
 from basic.network.SocketTransceiver import SocketTransceiver
 from basic.network.actions_transfer.Action import Action
 from basic.network.tools.CooldownChecker import CooldownChecker
@@ -13,6 +11,7 @@ class CommandSender:
     SOCKET_TRANSCEIVER_LOCK = threading.Lock()
 
     STOP_EVENT = threading.Event()
+    STOP_EVENT.set()
 
     COOLDOWN_MOUSE_MOVEMENT_CHECKER = CooldownChecker(200)
     COOLDOWN_MOUSE_MOVEMENT_CHECKER_LOCK = threading.Lock()
@@ -51,16 +50,11 @@ class CommandSender:
 
     @staticmethod
     def send_command(action: Action, val1: int, val2: int) -> None:
-
         CommandSender._process_stop_event(action)
         if CommandSender.STOP_EVENT.is_set():
-            if action == Action.ON_CLICK_PRESSED_RIGHT:
-                print(*pyautogui.position())
             return
-
         if not CommandSender._check_cooldown(action):
             return
-
         with CommandSender.SOCKET_TRANSCEIVER_LOCK:
             if CommandSender.SOCKET_TRANSCEIVER is not None:
                 command_data = CommandSender._pack_command(action, val1, val2)

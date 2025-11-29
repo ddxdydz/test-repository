@@ -46,15 +46,18 @@ class MouseRecorder:
     @staticmethod
     def on_click(x: int, y: int, button: Button, pressed: bool) -> bool:
         cx, cy = MouseRecorder._calibrate_xy(x, y)
-        if not MouseRecorder._check_xy_range(cx, cy):
-            return True
         if button == Button.left:
             action = Action.ON_CLICK_PRESSED_LEFT if pressed else Action.ON_CLICK_RELEASED_LEFT
         elif button == Button.right:
             action = Action.ON_CLICK_PRESSED_RIGHT if pressed else Action.ON_CLICK_RELEASED_RIGHT
+            # print("!!!", pyautogui.position())
         elif button == Button.middle:
             action = Action.ON_CLICK_PRESSED_MIDDLE if pressed else Action.ON_CLICK_RELEASED_MIDDLE
+            CommandSender.send_command(action, cx, cy)
+            return True
         else:
+            return True
+        if not MouseRecorder._check_xy_range(cx, cy):
             return True
         CommandSender.send_command(action, cx, cy)
         return True
