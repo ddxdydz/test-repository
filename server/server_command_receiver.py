@@ -35,9 +35,19 @@ class CommandReceiverServer(Server):
                     pyautogui.moveTo(val1, val2)
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
 
+            elif action == Action.ON_CLICK_PRESSED_LEFT:
+                if self.enable_executing:
+                    pyautogui.mouseDown(val1, val2, button='left')
+                print(self.command_comment, action, (val1, val2), pyautogui.position())
+
             elif action == Action.ON_CLICK_RELEASED_LEFT:
                 if self.enable_executing:
                     pyautogui.mouseUp(val1, val2, button='left')
+                print(self.command_comment, action, (val1, val2), pyautogui.position())
+
+            elif action == Action.ON_CLICK_PRESSED_RIGHT:
+                if self.enable_executing:
+                    pyautogui.mouseDown(val1, val2, button='right')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
 
             elif action == Action.ON_CLICK_RELEASED_RIGHT:
@@ -45,14 +55,14 @@ class CommandReceiverServer(Server):
                     pyautogui.mouseUp(val1, val2, button='right')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
 
-            elif action == Action.ON_CLICK_PRESSED_LEFT:
+            elif action == Action.ON_CLICK_PRESSED_MIDDLE:
                 if self.enable_executing:
-                    pyautogui.mouseDown(val1, val2, button='left')
+                    pyautogui.mouseDown(val1, val2, button='middle')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
 
-            elif action == Action.ON_CLICK_PRESSED_RIGHT:
+            elif action == Action.ON_CLICK_RELEASED_MIDDLE:
                 if self.enable_executing:
-                    pyautogui.mouseDown(val1, val2, button='right')
+                    pyautogui.mouseUp(val1, val2, button='middle')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
 
             elif action == Action.ON_SCROLL:
