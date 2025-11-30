@@ -1,5 +1,4 @@
 import socket
-from typing import List
 
 import pyautogui
 
@@ -19,10 +18,6 @@ class CommandReceiverServer(Server):
 
         pyautogui.FAILSAFE = False
 
-        self._current_modifiers = {
-            'ctrl_l': False, 'ctrl_r': False, 'alt_l': False, 'alt_r': False, 'shift': False, 'cmd': False
-        }
-
         self.enable_executing = enable_executing
         self.command_comment = "executed: " if enable_executing else "passed: "
 
@@ -30,14 +25,6 @@ class CommandReceiverServer(Server):
     def _check_xy_range(x: int, y: int):
         width, height = pyautogui.size()
         return 0 <= x <= width and 0 <= y <= height
-
-    def get_current_modifiers(self) -> List[str]:
-        result = []
-        if self._current_modifiers['ctrl_l'] or self._current_modifiers['ctrl_r']:
-            result.append('ctrl')
-        if self._current_modifiers['alt_l'] or self._current_modifiers['alt_r']:
-            result.append('alt')
-        return result
 
     def process(self, action: Action, val1: int, val2: int):
         if action in XY_ACTIONS and not self._check_xy_range(val1, val2):
@@ -69,43 +56,37 @@ class CommandReceiverServer(Server):
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
 
             elif action == Action.ON_SCROLL:
+                val1 -= SCROLL_ADDITIONAL_VALUE
+                val2 -= SCROLL_ADDITIONAL_VALUE
                 if self.enable_executing:
-                    pyautogui.hscroll(val1 - SCROLL_ADDITIONAL_VALUE)
-                    pyautogui.vscroll(val2 - SCROLL_ADDITIONAL_VALUE)
-                print(self.command_comment, action, (val1 - 1, val2 - 1), pyautogui.position())
+                    pyautogui.hscroll(val1)
+                    pyautogui.vscroll(val2)
+                print(self.command_comment, action, f"pyautogui.hscroll({val1})", f"pyautogui.vscroll({val2})")
 
             elif action == Action.ON_PRESS_REGULAR:
-                key_name = chr(val1).lower()
-                modifiers = self.get_current_modifiers()
-                if self.enable_executing:
-                    if modifiers:
-                        pyautogui.hotkey(*modifiers, key_name.lower())
-                        print(self.command_comment, f"hotkey: {modifiers}+{key_name}")
-                    else:
-                        pyautogui.keyDown(key_name)
-                print(self.command_comment, action, (val1, val2), key_name)
+                pass
 
             elif action == Action.ON_RELEASE_REGULAR:
-                key_name = chr(val1)
-                if self.enable_executing and not self.get_current_modifiers():
-                    pyautogui.keyUp(key_name)
-                print(self.command_comment, action, (val1, val2), key_name)
+                if 0 < val1 < 27:  # Ctrl + a, Ctrl + ...
+                    key_name = chr(val1 + 96).lower()  # 97 = 'a', 98 = 'b', etc.
+                else:
+                    key_name = chr(val1).lower()
+                if self.enable_executing:
+                    # pyautogui.keyUp(key_name)
+                    pyautogui.press(key_name)
+                print(self.command_comment, action, (val1, val2), f"pyautogui.press({key_name})")
 
             elif action == Action.ON_PRESS_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]
-                if key_name in self._current_modifiers.keys():
-                    self._current_modifiers[key_name] = True
                 if self.enable_executing:
                     pyautogui.keyDown(key_name)
-                print(self.command_comment, action, (val1, val2), key_name, self._current_modifiers)
+                print(self.command_comment, action, (val1, val2), f"pyautogui.keyDown({key_name})")
 
             elif action == Action.ON_RELEASE_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]
-                if key_name in self._current_modifiers.keys():
-                    self._current_modifiers[key_name] = False
                 if self.enable_executing:
                     pyautogui.keyUp(key_name)
-                print(self.command_comment, action, (val1, val2), key_name, self._current_modifiers)
+                print(self.command_comment, action, (val1, val2), f"pyautogui.keyUp({key_name})")
             else:
                 print(f"Unknown action: {action}")
         except Exception as e:
