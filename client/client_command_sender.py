@@ -78,7 +78,7 @@ if __name__ == "__main__":
     recorder.reset_calibration_xy(
         709, 372, 389, 216
     )
-    recorder.reset_calibration_xy(329, 210)
+    # recorder.reset_calibration_xy(329, 210)
     recorder.connect()
     recorder.start()
     # print(pyautogui.size())

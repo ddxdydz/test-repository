@@ -5,7 +5,7 @@ import pyautogui
 from pynput import mouse
 from pynput.mouse import Button
 
-from basic.network.actions_transfer.Action import Action
+from basic.network.actions_transfer.Action import Action, SCROLL_ADDITIONAL_VALUE
 from client.command_sending_tools.CommandSender import CommandSender
 
 
@@ -64,7 +64,7 @@ class MouseRecorder:
 
     @staticmethod
     def on_scroll(x: int, y: int, dx: int, dy: int) -> bool:
-        dx, dy = dx + 1, dy + 1  # отрицательные значения не передаются
+        dx, dy = dx + SCROLL_ADDITIONAL_VALUE, dy + SCROLL_ADDITIONAL_VALUE  # отрицательные значения не передаются
         if dx < 0 or dy < 0:
             return True
         CommandSender.send_command(Action.ON_SCROLL, dx, dy)

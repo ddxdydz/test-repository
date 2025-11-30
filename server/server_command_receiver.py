@@ -5,7 +5,7 @@ import pyautogui
 
 from basic.network.ABC_Server import Server
 from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
-from basic.network.actions_transfer.Action import Action, XY_ACTIONS
+from basic.network.actions_transfer.Action import Action, XY_ACTIONS, SCROLL_ADDITIONAL_VALUE
 from basic.network.actions_transfer.key_maps import KEY_MAP_NUM_TO_NAME
 
 
@@ -64,8 +64,8 @@ class CommandReceiverServer(Server):
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
             elif action == Action.ON_SCROLL:
                 if self.enable_executing:
-                    pyautogui.hscroll(val1 - 1)
-                    pyautogui.vscroll(val2 - 1)
+                    pyautogui.hscroll(val1 - SCROLL_ADDITIONAL_VALUE)
+                    pyautogui.vscroll(val2 - SCROLL_ADDITIONAL_VALUE)
                 print(self.command_comment, action, (val1 - 1, val2 - 1), pyautogui.position())
             elif action == Action.ON_PRESS_REGULAR:
                 key_name = chr(val1)
