@@ -25,10 +25,10 @@ class MouseRecorder:
             MouseRecorder.SCALE_X, MouseRecorder.SCALE_Y = scale_x, scale_y
 
     @staticmethod
-    def _calibrate_xy(x: int, y: int) -> Tuple[int, int]:
+    def _calibrate_xy(x: int, y: int, max_x: int = 3840, max_y: int = 2160) -> Tuple[int, int]:
         with MouseRecorder.CALIBRATION_XY_LOCK:
-            c_x = int((x + MouseRecorder.CALIBRATION_X) * MouseRecorder.SCALE_X)
-            c_y = int((y + MouseRecorder.CALIBRATION_Y) * MouseRecorder.SCALE_Y)
+            c_x = max(0, min(int((x + MouseRecorder.CALIBRATION_X) * MouseRecorder.SCALE_X), max_x))
+            c_y = max(0, min(int((y + MouseRecorder.CALIBRATION_Y) * MouseRecorder.SCALE_Y), max_y))
             return c_x, c_y
 
     @staticmethod
