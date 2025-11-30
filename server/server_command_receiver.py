@@ -5,8 +5,9 @@ import pyautogui
 
 from basic.network.ABC_Server import Server
 from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
-from basic.network.actions_transfer.Action import Action, XY_ACTIONS, SCROLL_ADDITIONAL_VALUE
+from basic.network.actions_transfer.Action import Action
 from basic.network.actions_transfer.key_maps import KEY_MAP_NUM_TO_NAME
+from basic.network.actions_transfer.settings import SCROLL_ADDITIONAL_VALUE, XY_ACTIONS
 
 
 class CommandReceiverServer(Server):
@@ -46,43 +47,50 @@ class CommandReceiverServer(Server):
                 if self.enable_executing:
                     pyautogui.moveTo(val1, val2)
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
+
             elif action == Action.ON_CLICK_RELEASED_LEFT:
                 if self.enable_executing:
                     pyautogui.mouseUp(val1, val2, button='left')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
+
             elif action == Action.ON_CLICK_RELEASED_RIGHT:
                 if self.enable_executing:
                     pyautogui.mouseUp(val1, val2, button='right')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
+
             elif action == Action.ON_CLICK_PRESSED_LEFT:
                 if self.enable_executing:
                     pyautogui.mouseDown(val1, val2, button='left')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
+
             elif action == Action.ON_CLICK_PRESSED_RIGHT:
                 if self.enable_executing:
                     pyautogui.mouseDown(val1, val2, button='right')
                 print(self.command_comment, action, (val1, val2), pyautogui.position())
+
             elif action == Action.ON_SCROLL:
                 if self.enable_executing:
                     pyautogui.hscroll(val1 - SCROLL_ADDITIONAL_VALUE)
                     pyautogui.vscroll(val2 - SCROLL_ADDITIONAL_VALUE)
                 print(self.command_comment, action, (val1 - 1, val2 - 1), pyautogui.position())
+
             elif action == Action.ON_PRESS_REGULAR:
-                key_name = chr(val1)
+                key_name = chr(val1).lower()
                 modifiers = self.get_current_modifiers()
                 if self.enable_executing:
                     if modifiers:
-                        # Немедленно выполняем хоткей
                         pyautogui.hotkey(*modifiers, key_name.lower())
                         print(self.command_comment, f"hotkey: {modifiers}+{key_name}")
                     else:
                         pyautogui.keyDown(key_name)
-                        print(self.command_comment, action, (val1, val2), key_name)
+                print(self.command_comment, action, (val1, val2), key_name)
+
             elif action == Action.ON_RELEASE_REGULAR:
                 key_name = chr(val1)
                 if self.enable_executing and not self.get_current_modifiers():
                     pyautogui.keyUp(key_name)
                 print(self.command_comment, action, (val1, val2), key_name)
+
             elif action == Action.ON_PRESS_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]
                 if key_name in self._current_modifiers.keys():
@@ -90,6 +98,7 @@ class CommandReceiverServer(Server):
                 if self.enable_executing:
                     pyautogui.keyDown(key_name)
                 print(self.command_comment, action, (val1, val2), key_name, self._current_modifiers)
+
             elif action == Action.ON_RELEASE_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]
                 if key_name in self._current_modifiers.keys():

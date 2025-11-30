@@ -3,6 +3,7 @@ from typing import Optional
 
 from basic.network.SocketTransceiver import SocketTransceiver
 from basic.network.actions_transfer.Action import Action
+from basic.network.actions_transfer.settings import STOP_COMMAND
 from basic.network.tools.CooldownChecker import CooldownChecker
 
 
@@ -28,8 +29,8 @@ class CommandSender:
         return True
 
     @staticmethod
-    def _process_stop_event(action: Action):
-        if action == Action.ON_CLICK_PRESSED_MIDDLE:
+    def _process_stop_event(action: Action, val1: int, val2: int):
+        if (action, val1, val2) == STOP_COMMAND:
             if CommandSender.STOP_EVENT.is_set():
                 CommandSender.STOP_EVENT.clear()
                 print("CommandSender: started")
@@ -50,11 +51,14 @@ class CommandSender:
 
     @staticmethod
     def send_command(action: Action, val1: int, val2: int) -> None:
-        CommandSender._process_stop_event(action)
+
+        CommandSender._process_stop_event(action, val1, val2)
         if CommandSender.STOP_EVENT.is_set():
             return
+
         if not CommandSender._check_cooldown(action):
             return
+
         with CommandSender.SOCKET_TRANSCEIVER_LOCK:
             if CommandSender.SOCKET_TRANSCEIVER is not None:
                 command_data = CommandSender._pack_command(action, val1, val2)

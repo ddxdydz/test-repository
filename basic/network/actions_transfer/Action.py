@@ -14,14 +14,3 @@ class Action(Enum):  # 16 действий максимум
     ON_PRESS_SPECIAL = 10
     ON_RELEASE_REGULAR = 11
     ON_RELEASE_SPECIAL = 12
-
-
-XY_ACTIONS = (
-    Action.ON_MOVE,
-    Action.ON_CLICK_RELEASED_LEFT,
-    Action.ON_CLICK_RELEASED_RIGHT,
-    Action.ON_CLICK_PRESSED_LEFT,
-    Action.ON_CLICK_PRESSED_RIGHT,
-)
-
-SCROLL_ADDITIONAL_VALUE = 1024

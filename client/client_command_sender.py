@@ -10,7 +10,7 @@ from client.settings import *
 
 
 class CommandSenderClient:
-    def __init__(self, server_host, server_port, enable_executing: bool):
+    def __init__(self, server_host="localhost", server_port=PORT_COMMAND_SERVER, enable_executing: bool = False):
         self.name = self.__class__.__name__
         self._server_host = server_host
         self._server_port = server_port
@@ -94,11 +94,22 @@ class CommandSenderClient:
 
 
 if __name__ == "__main__":
-    recorder = CommandSenderClient(HOST, PORT_COMMAND_SERVER, True)
-    recorder.reset_calibration_xy(
-        709, 372, 389, 216
-    )
-    # recorder.reset_calibration_xy(329, 210)
+    # Пауза на ctrl_r
+    # recorder = CommandSenderClient(HOST, PORT_COMMAND_SERVER, True)
+    recorder = CommandSenderClient()
+    # recorder.reset_calibration_xy(
+    #     709, 372, 389, 216
+    # )
+    # recorder.reset_calibration_by_corners(
+    #     329, 210,
+    #     1590, 967,
+    #     1280, 768
+    # )
+    # recorder.reset_calibration_by_corners(
+    #     70, 8,
+    #     1850, 1075,
+    #     1280, 768
+    # )
     recorder.connect()
     recorder.start()
     # print(pyautogui.size())
