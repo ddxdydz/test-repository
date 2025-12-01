@@ -47,4 +47,3 @@ source ~/test-repository/pyenv/bin/activate
 # Установка зависимостей
 pip install --upgrade pip
 pip install -r ~/test-repository/requirements.txt
-

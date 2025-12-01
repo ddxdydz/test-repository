@@ -1,7 +1,7 @@
-cat > ~/hello.py << 'EOF'
+cat > ~/test_hello.py << 'EOF'
 print("hello from python")
 EOF
-chmod +x ~/hello.py
+chmod +x ~/test_hello.py
 
 cat > ~/test_imports.py << 'EOF'
 try:
@@ -16,25 +16,25 @@ EOF
 chmod +x ~/test_imports.py
 
 
-cat > ~/chromium_check.sh << 'EOF'
+cat > ~/chrome_check << 'EOF'
 systemctl --user list-units | grep chromium-browser
 EOF
-chmod +x ~/chromium_check.sh
+chmod +x ~/chrome_check
 
-cat > ~/chromium_start.sh << 'EOF'
+cat > ~/chrome_start << 'EOF'
 systemd-run --user --slice=snap.slice --setenv=DISPLAY=:0 chromium-browser
 EOF
-chmod +x ~/chromium_start.sh
+chmod +x ~/chrome_start
 
-cat > ~/server_s.sh << 'EOF'
+cat > ~/server_s << 'EOF'
 PYTHONPATH=/home/yc-user/test-repository python3 ~/test-repository/server/server_screen_sender.py
 EOF
-chmod +x ~/server_s.sh
+chmod +x ~/server_s
 
-cat > ~/server_c.sh << 'EOF'
+cat > ~/server_c << 'EOF'
 PYTHONPATH=/home/yc-user/test-repository python3 ~/test-repository/server/server_command_receiver.py
 EOF
-chmod +x ~/server_c.sh
+chmod +x ~/server_c
 
 
 # Для буфера обмена

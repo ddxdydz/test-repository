@@ -96,20 +96,19 @@ class CommandSenderClient:
 if __name__ == "__main__":
     # Пауза на ctrl_r
     recorder = CommandSenderClient(HOST, PORT_COMMAND_SERVER, True)
-    # recorder = CommandSenderClient()
-    # recorder.reset_calibration_xy(
-    #     709, 372, 389, 216
-    # )
-    recorder.reset_calibration_by_corners(
-        329, 210,
-        1590, 967,
-        1280, 768
+    recorder.reset_calibration_xy(
+        709, 372, 389, 216
     )
     # recorder.reset_calibration_by_corners(
-    #     70, 8,
-    #     1850, 1075,
+    #     329, 210,
+    #     1590, 967,
     #     1280, 768
     # )
+    recorder.reset_calibration_by_corners(
+        70, 8,
+        1850, 1075,
+        1280, 768
+    )
     recorder.connect()
     recorder.start()
     while True:
