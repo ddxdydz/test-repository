@@ -11,7 +11,7 @@ from basic.network.tools.time_ms import time_ms
 
 
 class ScreenReceiverClient:
-    SOCKET_TIMEOUT = 10
+    SOCKET_TIMEOUT = 100
 
     def __init__(self, server_host, server_port=8888, colors: int = 3, scale_percent: int = 60):
         self.name = self.__class__.__name__

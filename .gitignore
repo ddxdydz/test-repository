@@ -1,4 +1,8 @@
 alegacy
 *.pyc
 .idea
-# __pycache__
+__pycache__
+
+/basic/crypt/test_data/
+/basic/crypt/pass_key.py
+/basic/crypt/private_key.pem
