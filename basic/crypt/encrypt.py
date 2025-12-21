@@ -34,12 +34,19 @@ def encrypt(file_path, public_key_path, output_path):
         f_out.write(encrypted_aes_key)
         f_out.write(iv)
 
+        input_size = os.path.getsize(file_path)
+        chunk_size = 65536
+        total_size = 0
+
         while True:
-            chunk = f_in.read(65536)
+            chunk = f_in.read(chunk_size)
             if not chunk:
                 break
             ciphertext = encryptor.update(chunk)
             f_out.write(ciphertext)
+
+            total_size += chunk_size
+            print(f"{total_size * 100 / input_size:.2f}")
 
         ciphertext = encryptor.finalize()
         f_out.write(ciphertext)
