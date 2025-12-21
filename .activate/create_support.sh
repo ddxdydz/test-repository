@@ -59,7 +59,7 @@ echo ""
 EOF
 chmod +x ~/v
 
-tee ~/encript_mp4 > /dev/null << EOF
+tee ~/encrypt_mp4 > /dev/null << EOF
 python ~/test-repository/basic/crypt/encrypt.py ~/Downloads
 EOF
-chmod +x ~/encript_mp4
+chmod +x ~/encrypt_mp4
