@@ -58,3 +58,8 @@ xclip -selection clipboard -o
 echo ""
 EOF
 chmod +x ~/v
+
+tee ~/encript_mp4 > /dev/null << EOF
+python ~/test-repository/basic/crypt/encrypt.py ~/Downloads
+EOF
+chmod +x ~/encript_mp4

@@ -101,4 +101,5 @@ def main(input_path=None):
 
 
 if __name__ == "__main__":
-    main(r".\test_data")
+    # main(r".\test_data")
+    main()

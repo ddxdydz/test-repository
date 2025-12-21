@@ -98,4 +98,4 @@ def main(input_path):
 
 
 if __name__ == "__main__":
-    main(r"C:\Users\UserLog.ru\PycharmProjects\up_server\crypt")
+    main(r"C:\Users\UserLog.ru\Downloads\...")
