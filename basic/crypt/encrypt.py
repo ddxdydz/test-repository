@@ -61,7 +61,7 @@ def process_file(input_path):
     if os.path.exists(output_path):
         print(f"[SKIPPED] {os.path.basename(input_path)} already has encoded version!")
         return
-    encrypt(input_path, "public_key.pem", output_path)
+    encrypt(input_path, "./public_key.pem", output_path)
     print(f"[OK] {os.path.basename(input_path)} → {os.path.basename(output_path)}")
 
 
