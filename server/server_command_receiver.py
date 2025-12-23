@@ -88,6 +88,13 @@ class CommandReceiverServer(Server):
 
             elif action == Action.ON_PRESS_SPECIAL:
                 key_name = KEY_MAP_NUM_TO_NAME[val1]
+
+                if key_name == "alt_r":
+                    if self.enable_executing:
+                        pyautogui.click(button='right')
+                    print(self.command_comment, "pyautogui.click(button='right')", pyautogui.position())
+                    return
+
                 if self.enable_executing:
                     pyautogui.keyDown(key_name)
                 print(self.command_comment, action, (val1, val2), f"pyautogui.keyDown({key_name})")
