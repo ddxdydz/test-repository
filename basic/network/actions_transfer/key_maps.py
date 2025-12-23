@@ -1,7 +1,7 @@
 KEY_MAP_NAME_TO_NUM = {
     "alt": 18,
-    "alt_gr": 18,  # 165,
     "alt_l": 18,  # 164,
+    "alt_gr": 165,
     "alt_r":  165,
     "backspace": 8,
     "caps_lock": 20,
