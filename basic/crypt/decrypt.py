@@ -98,4 +98,4 @@ def main(input_path):
 
 
 if __name__ == "__main__":
-    main(r"C:\Users\UserLog.ru\Downloads\...")
+    main(r"C:\Users\UserLog.ru\Downloads\archive")

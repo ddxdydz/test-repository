@@ -1,6 +1,7 @@
 import os
 import struct
 import sys
+from math import ceil
 from pathlib import Path
 
 from cryptography.hazmat.primitives import hashes, serialization
@@ -8,6 +9,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 EXT = ".mp4"
+PROGRESS_INDICATOR_STEP = 4
 
 
 def encrypt(file_path, public_key_path, output_path):
@@ -36,7 +38,9 @@ def encrypt(file_path, public_key_path, output_path):
 
         input_size = os.path.getsize(file_path)
         chunk_size = 65536
-        total_size = 0
+        size = 0
+
+        is_print = [False] * (100 // PROGRESS_INDICATOR_STEP + 2)
 
         while True:
             chunk = f_in.read(chunk_size)
@@ -45,8 +49,13 @@ def encrypt(file_path, public_key_path, output_path):
             ciphertext = encryptor.update(chunk)
             f_out.write(ciphertext)
 
-            total_size += chunk_size
-            print(f"{total_size * 100 / input_size:.2f}")
+            size += chunk_size
+            percent = int(size * 100 / input_size)
+            progress_value = percent // PROGRESS_INDICATOR_STEP
+            if not is_print[progress_value]:
+                is_print[progress_value] = True
+                print(f"{percent}%", sep='', end=' ')
+        print("100%" if not is_print[ceil(100 / PROGRESS_INDICATOR_STEP)] else "")
 
         ciphertext = encryptor.finalize()
         f_out.write(ciphertext)
@@ -109,5 +118,5 @@ def main(input_path=None):
 
 
 if __name__ == "__main__":
-    # main(r".\test_data")
-    main()
+    main(r".\test_data")
+    # main()
