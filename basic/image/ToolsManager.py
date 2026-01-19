@@ -135,30 +135,32 @@ class ToolsManager:
     @staticmethod
     def print_encode_stats(encode_stats: Dict, left_indent: int = 8) -> None:
         data_to_print = [
-            f"{"time_to_open".ljust(22)}{encode_stats["time_to_open"]:.6f}",
-            f"{"time_to_convert".ljust(22)}{encode_stats["time_to_convert"]:.6f}",
-            f"{"time_to_resize".ljust(22)}{encode_stats["time_to_resize"]:.6f}",
-            f"{"time_to_quantize".ljust(22)}{encode_stats["time_to_quantize"]:.6f}",
-            f"{"time_to_compute_diff".ljust(22)}{encode_stats["time_to_compute_difference"]:.6f}",
-            f"{"time_to_pack".ljust(22)}{encode_stats["time_to_pack"]:.6f}",
-            f"{"time_to_compress".ljust(22)}{encode_stats["time_to_compress"]:.6f}",
-            f"{"total_time".ljust(22)}{encode_stats["total_time"]:.6f}",
-            f"{"encoded_size".ljust(22)}{encode_stats["encoded_size"]} B"
+            f'{"time_to_open".ljust(22)}{encode_stats["time_to_open"]:.6f}',
+            f'{"time_to_convert".ljust(22)}{encode_stats["time_to_convert"]:.6f}',
+            f'{"time_to_resize".ljust(22)}{encode_stats["time_to_resize"]:.6f}',
+            f'{"time_to_quantize".ljust(22)}{encode_stats["time_to_quantize"]:.6f}',
+            f'{"time_to_compute_diff".ljust(22)}{encode_stats["time_to_compute_difference"]:.6f}',
+            f'{"time_to_pack".ljust(22)}{encode_stats["time_to_pack"]:.6f}',
+            f'{"time_to_compress".ljust(22)}{encode_stats["time_to_compress"]:.6f}',
+            f'{"total_time".ljust(22)}{encode_stats["total_time"]:.6f}',
+            f'{"encoded_size".ljust(22)}{encode_stats["encoded_size"]} B'
         ]
-        print(f'{left_indent * " "}{f"\n{left_indent * " "}".join(data_to_print)}')
+        left_indent_str = left_indent * " "
+        print(left_indent_str, f"\n{left_indent_str}".join(data_to_print), sep='')
 
     @staticmethod
     def print_decode_stats(decode_stats: Dict, left_indent: int = 8) -> None:
         data_to_print = [
-            f"{"time_to_decompress".ljust(22)}{decode_stats["time_to_decompress"]:.6f}",
-            f"{"time_to_unpack".ljust(22)}{decode_stats["time_to_unpack"]:.6f}",
-            f"{"time_to_apply_diff".ljust(22)}{decode_stats["time_to_apply_difference"]:.6f}",
-            f"{"time_to_dequantize".ljust(22)}{decode_stats["time_to_dequantize"]:.6f}",
-            f"{"time_to_desize".ljust(22)}{decode_stats["time_to_desize"]:.6f}",
-            f"{"total_time".ljust(22)}{decode_stats["total_time"]:.6f}",
-            f"{"encoded_size".ljust(22)}{decode_stats["encoded_size"]} B"
+            f'{"time_to_decompress".ljust(22)}{decode_stats["time_to_decompress"]:.6f}',
+            f'{"time_to_unpack".ljust(22)}{decode_stats["time_to_unpack"]:.6f}',
+            f'{"time_to_apply_diff".ljust(22)}{decode_stats["time_to_apply_difference"]:.6f}',
+            f'{"time_to_dequantize".ljust(22)}{decode_stats["time_to_dequantize"]:.6f}',
+            f'{"time_to_desize".ljust(22)}{decode_stats["time_to_desize"]:.6f}',
+            f'{"total_time".ljust(22)}{decode_stats["total_time"]:.6f}',
+            f'{"encoded_size".ljust(22)}{decode_stats["encoded_size"]} B'
         ]
-        print(f'{left_indent * " "}{f"\n{left_indent * " "}".join(data_to_print)}')
+        left_indent_str = left_indent * " "
+        print(left_indent_str, f"\n{left_indent_str}".join(data_to_print), sep='')
 
     @staticmethod
     def show_decoded_image(decoded_image: np.ndarray) -> None:
