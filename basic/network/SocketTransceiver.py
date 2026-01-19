@@ -1,6 +1,4 @@
 import socket
-from collections.abc import Buffer
-from typing import Any
 
 
 class SocketTransceiverError(Exception):
@@ -175,7 +173,7 @@ class SocketTransceiver:
         if self._socket:
             self._socket.settimeout(timeout)
 
-    def connect(self, __address: tuple[Any, ...] | str | Buffer | Buffer) -> None:
+    def connect(self, __address) -> None:
         self._socket.connect(__address)
 
     def close(self):

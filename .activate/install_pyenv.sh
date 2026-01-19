@@ -37,34 +37,34 @@ sudo apt install -y libasound2-dev libpulse-dev
 sudo apt autoremove -y
 
 # Установка python
- sudo apt install python3 python3-pip python3-venv -y
+# sudo apt install python3 python3-pip python3-venv -y
 # Installing python3.10 on Ubunutu 20.04
 # Install build dependencies
-#sudo apt update
-#sudo apt install -y wget build-essential libssl-dev zlib1g-dev \
-#libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev \
-#xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-## Download Python 3.10
-#cd /tmp
-#wget https://www.python.org/ftp/python/3.10.13/Python-3.10.13.tgz
-#tar -xzf Python-3.10.13.tgz
-#cd Python-3.10.13
-## Configure with optimizations
-#./configure --enable-optimizations --enable-shared
-## Compile
-#make -j$(nproc)
-## Install (using altinstall to not replace system python)
-#sudo make altinstall
-## It's probably in /usr/local/lib
-#ls -la /usr/local/lib/libpython3.10*
-## Add /usr/local/lib to the library path
-#echo '/usr/local/lib' | sudo tee /etc/ld.so.conf.d/python3.10.conf
-## Update the dynamic linker run-time bindings
-#sudo ldconfig
-## Now try python3.10 again
-#python3.10 --version
-#sudo update-alternatives --install /usr/bin/python3 python3 /usr/local/bin/python3.10 1
-#python3 --version
+sudo apt update
+sudo apt install -y wget build-essential libssl-dev zlib1g-dev \
+libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev \
+xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+# Download Python 3.10
+cd /tmp
+wget https://www.python.org/ftp/python/3.10.13/Python-3.10.13.tgz
+tar -xzf Python-3.10.13.tgz
+cd Python-3.10.13
+# Configure with optimizations
+./configure --enable-optimizations --enable-shared
+# Compile
+make -j$(nproc)
+# Install (using altinstall to not replace system python)
+sudo make altinstall
+# It's probably in /usr/local/lib
+ls -la /usr/local/lib/libpython3.10*
+# Add /usr/local/lib to the library path
+echo '/usr/local/lib' | sudo tee /etc/ld.so.conf.d/python3.10.conf
+# Update the dynamic linker run-time bindings
+sudo ldconfig
+# Now try python3.10 again
+python3.10 --version
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/local/bin/python3.10 1
+python3 --version
 
 # Создание и активация среды
 python3 -m venv ~/test-repository/pyenv
