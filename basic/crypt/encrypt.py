@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 EXT = ".mp4"
-PROGRESS_INDICATOR_STEP = 4
+PROGRESS_INDICATOR_STEP = 10
 
 
 def encrypt(file_path, public_key_path, output_path):
@@ -54,7 +54,7 @@ def encrypt(file_path, public_key_path, output_path):
             progress_value = percent // PROGRESS_INDICATOR_STEP
             if not is_print[progress_value]:
                 is_print[progress_value] = True
-                print(f"{percent}%", sep='', end=' ')
+                print(f"{percent}%")
         print("100%" if not is_print[ceil(100 / PROGRESS_INDICATOR_STEP)] else "")
 
         ciphertext = encryptor.finalize()
@@ -118,5 +118,5 @@ def main(input_path=None):
 
 
 if __name__ == "__main__":
-    main(r".\test_data")
-    # main()
+    # main(r".\test_data")
+    main()
