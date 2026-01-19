@@ -1,4 +1,5 @@
 import socket
+import time
 
 from pynput import keyboard, mouse
 
@@ -83,7 +84,7 @@ class CommandSenderClient:
         print(f"{self.name}: Recording stopped")
 
     def is_running(self) -> bool:
-        return self.mouse_listener.running
+        return self.mouse_listener.running and self.keyboard_listener.running
 
     def __enter__(self):
         self.start()
@@ -96,20 +97,27 @@ class CommandSenderClient:
 
 if __name__ == "__main__":
     while True:
+        recorder = None
         try:
             print("connecting...")
             recorder = CommandSenderClient(HOST, PORT_COMMAND_SERVER, True)
 
             recorder.reset_calibration_xy(709, 372, 389, 216)
-            # recorder.reset_calibration_by_corners(329, 210, 1590, 967, 1280, 768)
-            # recorder.reset_calibration_by_corners(70, 8, 1850, 1075, 1280, 768)
+            recorder.reset_calibration_by_corners(70, 8, 1850, 1075, 1280, 768)
 
             recorder.connect()
-            recorder.start()  # Пауза на ctrl_r
-            while True:
-                pass
+            recorder.start()
+
+            while recorder.is_running():
+                time.sleep(0.1)
+            print(f"END CYCLE: {recorder.is_running()}")
         except Exception as e:
             print("ERROR CommandSenderClient CYCLE", e)
         finally:
-            recorder.stop()
-            recorder.close()
+            print(f"recorder is not None: {recorder is not None}, closing...")
+            if recorder is not None:
+                recorder.stop()
+                recorder.close()
+            for i in range(1, 6):
+                print(f"waiting... ({i})")
+                time.sleep(1)

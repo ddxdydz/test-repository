@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cat > ~/test_hello.py << 'EOF'
 print("hello from python")
 EOF
