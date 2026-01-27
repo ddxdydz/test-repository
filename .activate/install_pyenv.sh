@@ -46,9 +46,9 @@ libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev \
 xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 # Download Python 3.10
 cd /tmp
-wget https://www.python.org/ftp/python/3.10.13/Python-3.10.13.tgz
-tar -xzf Python-3.10.13.tgz
-cd Python-3.10.13
+wget https://www.python.org/ftp/python/3.12.2/Python-3.12.2.tgz
+tar -xzf Python-3.12.2.tgz
+cd Python-3.12.2
 # Configure with optimizations
 ./configure --enable-optimizations --enable-shared
 # Compile
@@ -56,14 +56,14 @@ make -j$(nproc)
 # Install (using altinstall to not replace system python)
 sudo make altinstall
 # It's probably in /usr/local/lib
-ls -la /usr/local/lib/libpython3.10*
+ls -la /usr/local/lib/libpython3.12*
 # Add /usr/local/lib to the library path
-echo '/usr/local/lib' | sudo tee /etc/ld.so.conf.d/python3.10.conf
+echo '/usr/local/lib' | sudo tee /etc/ld.so.conf.d/python3.12.conf
 # Update the dynamic linker run-time bindings
 sudo ldconfig
 # Now try python3.10 again
-python3.10 --version
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/local/bin/python3.10 1
+python3.12 --version
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/local/bin/python3.12 1
 python3 --version
 
 # Создание и активация среды

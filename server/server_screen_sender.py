@@ -28,8 +28,8 @@ class ServerScreener(Server):
             socket_transceiver.send_raw(screen_width.to_bytes(SCREEN_WIDTH_SIZE, 'big'))
             socket_transceiver.send_raw(screen_height.to_bytes(SCREEN_HEIGHT_SIZE, 'big'))
             # Получение параметров выходного изображения
-            colors = int.from_bytes(socket_transceiver.recv_raw(COLORS_SIZE))
-            scale_percent = int.from_bytes(socket_transceiver.recv_raw(SCALE_PERCENT_SIZE))
+            colors = int.from_bytes(socket_transceiver.recv_raw(COLORS_SIZE), byteorder="big")
+            scale_percent = int.from_bytes(socket_transceiver.recv_raw(SCALE_PERCENT_SIZE), byteorder="big")
             return ToolsManager(screen_width, screen_height, colors, scale_percent)
         except Exception as e:
             print(f"{self.name}.init_tools_manager: {e}")
