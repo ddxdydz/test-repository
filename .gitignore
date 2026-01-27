@@ -4,5 +4,5 @@ alegacy
 __pycache__
 
 /basic/crypt/test_data/
-/basic/crypt/pass_key.py
-/basic/crypt/private_key.pem
+/basic/crypt/key/pass_key.py
+/basic/crypt/key/private_key.pem

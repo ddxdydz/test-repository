@@ -8,7 +8,9 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-EXT = ".mp4"
+from tools.get_paths import get_paths
+from tools.print_message import print_message, SUCCESS, OK, PROCESSING
+
 PROGRESS_INDICATOR_STEP = 10
 
 
@@ -55,68 +57,28 @@ def encrypt(file_path, public_key_path, output_path):
             if not is_print[progress_value]:
                 is_print[progress_value] = True
                 print(f"{percent}%")
-        print("100%" if not is_print[ceil(100 / PROGRESS_INDICATOR_STEP)] else "")
+        if not is_print[ceil(100 / PROGRESS_INDICATOR_STEP)]:
+            print("100%")
 
         ciphertext = encryptor.finalize()
         f_out.write(ciphertext)
         f_out.write(encryptor.tag)
 
 
-def process_file(input_path):
-    if not os.path.isfile(input_path):
-        print(f"[PASSED] {os.path.basename(input_path)} is not a file!")
+def main(process_path=None):
+    if process_path is None:
+        process_path = sys.argv[1]
+    public_key_path = Path(__file__).parent / "key" / "public_key.pem"
+    paths = get_paths(process_path, '.mp4', '.enc')
+    if not paths:
         return
-    base, ext = os.path.splitext(input_path)
-    if ext != EXT:
-        print(f"[PASSED] {os.path.basename(input_path)} is a not {EXT} file!")
-        return
-    if os.path.getsize(input_path) < 1024:
-        print(f"[PASSED] {os.path.basename(input_path)} is a low size file ({os.path.getsize(input_path)})!")
-        return
-    output_path = base + ".enc"
-    if os.path.exists(output_path):
-        print(f"[SKIPPED] {os.path.basename(input_path)} already has encoded version!")
-        return
-    public_key_path = Path(__file__).parent / "public_key.pem"
-    encrypt(input_path, public_key_path, output_path)
-    print(f"[OK] {os.path.basename(input_path)} → {os.path.basename(output_path)}")
-
-
-def process_dir(input_path):
-    if not os.path.isdir(input_path):
-        print(f"[ERROR] {input_path} is not a directory!")
-        return
-
-    print(f"[INFO] Scanning directory: {input_path}")
-
-    enc_files = list(Path(input_path).rglob(f"*{EXT}"))
-
-    if not enc_files:
-        print(f"[INFO] No {EXT} files found in {input_path}")
-        return
-
-    print(f"[INFO] Found {len(enc_files)} .enc file(s)")
-
-    for enc_file in enc_files:
-        enc_file_path = str(enc_file)
-        print(f"\n[PROCESSING] {enc_file.relative_to(input_path)}")
-        process_file(enc_file_path)
-
-    print(f"\n[COMPLETE] Processed {len(enc_files)} file(s)")
-
-
-def main(input_path=None):
-    if input_path is None:
-        input_path = sys.argv[1]
-    if os.path.isfile(input_path):
-        process_file(input_path)
-    elif os.path.isdir(input_path):
-        process_dir(input_path)
-    else:
-        print(f"[ERROR] '{input_path}' is not a file or directory.")
-        sys.exit(1)
+    for input_path, output_path in paths:
+        print_message(f"{input_path}", PROCESSING)
+        encrypt(input_path, public_key_path, output_path)
+        print_message(f"{os.path.basename(input_path)} → {os.path.basename(output_path)}", OK)
+    print_message(f"{len(paths)} files are processed!", SUCCESS)
 
 
 if __name__ == "__main__":
-    # main(r".\test_data")
-    main()
+    main(r".\test_data")
+    # main()

@@ -7,11 +7,12 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from pass_key import PASS
+from key.pass_key import PASS
+from tools.get_paths import get_paths
+from tools.print_message import print_message, SUCCESS, OK, PROCESSING
 
 
 def decrypt(encrypted_path, private_key_path, password, output_path):
-    """Упрощенная версия дешифрования"""
     with open(private_key_path, "rb") as f:
         private_key = serialization.load_pem_private_key(
             f.read(),
@@ -43,59 +44,21 @@ def decrypt(encrypted_path, private_key_path, password, output_path):
         f_out.write(plaintext)
 
 
-def process_file(input_path):
-    if not os.path.isfile(input_path):
-        print(f"[PASSED] {os.path.basename(input_path)} is not a file!")
+def main(process_path=None):
+    if process_path is None:
+        process_path = sys.argv[1]
+    private_key = Path(__file__).parent / "key" / "private_key.pem"
+    paths = get_paths(process_path, '.enc', '.dec.mp4')
+    if not paths:
         return
-    base, ext = os.path.splitext(input_path)
-    if ext != ".enc":
-        print(f"[PASSED] {os.path.basename(input_path)} is a not .enc file!")
-        return
-    if os.path.getsize(input_path) < 1024:
-        print(f"[PASSED] {os.path.basename(input_path)} is a low size file ({os.path.getsize(input_path)})!")
-        return
-    output_path = base + ".dec.mp4"
-    if os.path.exists(output_path):
-        print(f"[SKIPPED] {os.path.basename(input_path)} already has decoded version!")
-        return
-    decrypt(input_path, "private_key.pem", PASS, output_path)
-    print(f"[OK] {os.path.basename(input_path)} → {os.path.basename(output_path)}")
-
-
-def process_dir(input_path):
-    """Обработка всех .enc файлов в директории и поддиректориях"""
-    if not os.path.isdir(input_path):
-        print(f"[ERROR] {input_path} is not a directory!")
-        return
-
-    print(f"[INFO] Scanning directory: {input_path}")
-
-    # Используем glob для поиска всех .enc файлов
-    enc_files = list(Path(input_path).rglob("*.enc"))
-
-    if not enc_files:
-        print(f"[INFO] No .enc files found in {input_path}")
-        return
-
-    print(f"[INFO] Found {len(enc_files)} .enc file(s)")
-
-    for enc_file in enc_files:
-        enc_file_path = str(enc_file)
-        print(f"\n[PROCESSING] {enc_file.relative_to(input_path)}")
-        process_file(enc_file_path)
-
-    print(f"\n[COMPLETE] Processed {len(enc_files)} file(s)")
-
-
-def main(input_path):
-    if os.path.isfile(input_path):
-        process_file(input_path)
-    elif os.path.isdir(input_path):
-        process_dir(input_path)
-    else:
-        print(f"[ERROR] '{input_path}' is not a file or directory.")
-        sys.exit(1)
+    for input_path, output_path in paths:
+        print_message(f"{input_path}", PROCESSING)
+        decrypt(input_path, private_key, PASS, output_path)
+        print_message(f"{os.path.basename(input_path)} → {os.path.basename(output_path)}", OK)
+    print_message(f"{len(paths)} files are processed!", SUCCESS)
 
 
 if __name__ == "__main__":
-    main(r"C:\Users\UserLog.ru\Downloads\archive")
+    main(r".\test_data")
+    # main(r"C:\Users\UserLog.ru\Downloads\archive")
+    # main()
