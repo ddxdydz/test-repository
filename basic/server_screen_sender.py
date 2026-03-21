@@ -4,11 +4,12 @@ from typing import Tuple, Dict
 import numpy as np
 import pyautogui
 
-from basic.image.ToolsManager import ToolsManager
-from basic.network.ABC_Server import Server
-from basic.network.SocketTransceiver import SocketTransceiver, TimeoutSocketTransceiverError, SocketTransceiverError
-from basic.network.size_constants import *
-from basic.network.tools.time_ms import time_ms
+from image.ToolsManager import ToolsManager
+from network.core.ABC_Server import Server
+from network.core.SocketTransceiver import SocketTransceiver, TimeoutSocketTransceiverError, \
+    SocketTransceiverError
+from network.core.time_ms import time_ms
+from network.screen_transfer.size_constants import *
 
 
 class ServerScreener(Server):

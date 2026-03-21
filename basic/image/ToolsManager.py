@@ -6,19 +6,26 @@ import numpy as np
 from PIL import Image
 from mss import mss
 
-from basic.image.compression.base_compressors import BZ2Compressor
-from basic.image.difference.GrayscaleDifferenceHandler import GrayscaleDifferenceHandler
-from basic.image.packing.NoTampingPacker import NoTampingPacker
-from basic.image.quanting.GrayQuantizer import GrayQuantizer
-from basic.image.resizing.CVResizerIntScale import CVResizerIntScale
+from .compression.base_compressors import BZ2Compressor
+from .difference.GrayscaleDifferenceHandler import GrayscaleDifferenceHandler
+from .packing.NoTampingPacker import NoTampingPacker
+from .quanting.GrayQuantizer import GrayQuantizer
+from .quanting.RGBQuantizer import RGBQuantizer
+from .quanting.CombQuantizer import CombQuantizer
+from .quanting.BinQuantizer import BinQuantizer
+from .resizing.CVResizerIntScale import CVResizerIntScale
 
 
 class ToolsManager:
-    def __init__(self, width: int = 2, height: int = 2, colors: int = 2, scale_percent: int = 100):
+    QUANTIZER_MAP = {"gray": GrayQuantizer, "rgb": RGBQuantizer, "comb": CombQuantizer, "bin": BinQuantizer}
+
+    def __init__(self, width: int = 2, height: int = 2,
+                 colors: int = 2, scale_percent: int = 100,
+                 quantizer_type="gray"):
         self.name = self.__class__.__name__
         self.parameters = width, height, colors, scale_percent
         self._resizer = CVResizerIntScale(scale_percent=scale_percent, original_size=(width, height))
-        self._quantizer = GrayQuantizer(colors)
+        self._quantizer = self.QUANTIZER_MAP["bin" if colors == 2 else quantizer_type](colors)
         self._packer = NoTampingPacker(colors)
         self._compressor = BZ2Compressor()
         self._difference_handler = GrayscaleDifferenceHandler(colors, scale_percent, shape=(height, width))
@@ -178,6 +185,7 @@ class ToolsManager:
 
 
 if __name__ == "__main__":
+
     print(ToolsManager())
     tools_manager = ToolsManager(1279, 719, 3, 60)
     for image_name in ["ch1.jpg", "ch2.jpg", "ch3.jpg", "ch3.jpg"]:

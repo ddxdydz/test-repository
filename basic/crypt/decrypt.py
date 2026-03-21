@@ -59,6 +59,6 @@ def main(process_path=None):
 
 
 if __name__ == "__main__":
-    main(r".\test_data")
-    # main(r"C:\Users\UserLog.ru\Downloads\archive")
+    # main(r".\test_data")
+    main(r"C:\Users\UserLog.ru\Downloads\archive")
     # main()

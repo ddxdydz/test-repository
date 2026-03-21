@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from basic.image.quanting.ABC_Quantizer import Quantizer
+from .ABC_Quantizer import Quantizer
 
 
 class RGBQuantizer(Quantizer):
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     from pathlib import Path
     from PIL import Image
 
-    quantizer = RGBQuantizer(4)
+    quantizer = RGBQuantizer(2)
 
     img_path = Path(__file__).parent.parent / "data" / "a10.jpg"
     original_img = Image.open(img_path)

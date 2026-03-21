@@ -1,9 +1,9 @@
 from pynput import keyboard
 from pynput.keyboard import KeyCode, Key
 
-from basic.network.actions_transfer.Action import Action
-from basic.network.actions_transfer.key_maps import KEY_MAP_NAME_TO_NUM
-from client.command_sending_tools.CommandSender import CommandSender
+from .CommandSender import CommandSender
+from .command_encoding.Action import Action
+from .command_encoding.key_maps import KEY_MAP_NAME_TO_NUM
 
 
 class KeyboardRecorder:

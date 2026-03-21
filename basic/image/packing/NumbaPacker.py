@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit, prange
 
-from basic.image.packing.ABC_Packer import Packer
+from .ABC_Packer import Packer
 
 
 class NumbaPacker(Packer):

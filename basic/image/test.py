@@ -6,7 +6,7 @@ import numpy as np
 import pyautogui
 from PIL import Image
 import cv2
-from basic.image.__all_tools import *
+from __all_tools import *
 
 # LZMA не используется, всегда самый медленный
 

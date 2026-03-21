@@ -1,5 +1,5 @@
 from time import time
-from basic.image.compression.base_compressors import *
+from .base_compressors import *
 
 
 class AdaptiveCompressor(Compressor):

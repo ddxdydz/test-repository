@@ -1,6 +1,6 @@
 import threading
 
-from basic.image.compression.base_compressors import *
+from .base_compressors import *
 
 
 class CompetitionCompressor(Compressor):

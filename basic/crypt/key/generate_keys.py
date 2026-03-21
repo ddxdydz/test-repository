@@ -1,5 +1,6 @@
-from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
 from pass_key import PASS
 
 # Генерация пары ключей (2048 бит)

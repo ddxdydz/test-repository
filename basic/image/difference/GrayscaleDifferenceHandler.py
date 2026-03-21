@@ -1,7 +1,8 @@
 from typing import Tuple
-from basic.image.resizing.ABC_ImageResizer import ImageResizer
 
 import numpy as np
+
+from ..resizing.ABC_ImageResizer import ImageResizer
 
 
 class GrayscaleDifferenceHandler:
@@ -131,6 +132,7 @@ if __name__ == "__main__":
         _s_time = time()
         diffed = diff_handler.compute_difference(quantized)
         print("diffed", time() - _s_time)
+        print("diffed nonzeros", np.count_nonzero(diffed))
         print("diffed size:", len(compressor.compress(packer.pack_array(diffed))), "B")
 
         data = compressor.decompress(compressor.compress(packer.pack_array(diffed)))

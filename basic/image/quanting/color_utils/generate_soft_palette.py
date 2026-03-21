@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
-from basic.image.quanting.tools.generate_palette import generate_palette
-from basic.image.quanting.tools.soft_color_rgb import soft_color_rgb
+from .generate_palette import generate_palette
+from .soft_color_rgb import soft_color_rgb
 
 
 def generate_soft_palette(colors: int) -> List[Tuple[int, int, int]]:

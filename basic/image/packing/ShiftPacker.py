@@ -2,7 +2,7 @@ from typing import TypeAlias
 
 import numpy as np
 
-from basic.image.packing.ABC_Packer import Packer
+from .ABC_Packer import Packer
 
 
 class ShiftPacker(Packer):

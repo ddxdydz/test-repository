@@ -4,9 +4,9 @@ from time import strftime
 import pyautogui
 import pygame
 
-from basic.network.tools.time_ms import time_ms
-from client.client_screen_receiver import ScreenReceiverClient
-from client.settings import *
+from client_screen_receiver import ScreenReceiverClient
+from network.core.time_ms import time_ms
+from settings import *
 
 
 def process_screen_receiving():

@@ -2,11 +2,11 @@ import socket
 
 import pyautogui
 
-from basic.network.ABC_Server import Server
-from basic.network.SocketTransceiver import SocketTransceiver, SocketTransceiverError
-from basic.network.actions_transfer.Action import Action
-from basic.network.actions_transfer.key_maps import KEY_MAP_NUM_TO_NAME
-from basic.network.actions_transfer.settings import SCROLL_ADDITIONAL_VALUE, XY_ACTIONS
+from network.command_encoding.Action import Action, XY_ACTIONS
+from network.command_encoding.key_maps import KEY_MAP_NUM_TO_NAME
+from network.command_encoding.settings import SCROLL_ADDITIONAL_VALUE
+from network.core.ABC_Server import Server
+from network.core.SocketTransceiver import SocketTransceiver, SocketTransceiverError
 
 
 class CommandReceiverServer(Server):
