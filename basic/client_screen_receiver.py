@@ -100,9 +100,12 @@ class ScreenReceiverClient:
 
 
 if __name__ == "__main__":
-    client = ScreenReceiverClient('192.168.56.1', 8888)
+    from settings import COLORS, SCALE_PERCENT
+    client = ScreenReceiverClient('10.233.32.76', 8888, COLORS, SCALE_PERCENT)
     if client.connect():
         client.recv_screen()
-        # client.recv_screen()
-        # client.show(client.recv_screen()["data"])
+        client.recv_screen()
+        client.recv_screen()
+        client.recv_screen()
+        client.show(client.recv_screen()["data"])
     client.close()
