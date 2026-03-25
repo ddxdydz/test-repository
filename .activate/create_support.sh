@@ -1,11 +1,11 @@
 #!/bin/bash
 
-cat > ~/test_hello.py << 'EOF'
+cat > ~/py-hello.py << 'EOF'
 print("hello from python")
 EOF
-chmod +x ~/test_hello.py
+chmod +x ~/py-hello.py
 
-cat > ~/test_imports.py << 'EOF'
+cat > ~/py-imports.py << 'EOF'
 try:
     import numpy as np
     import pyautogui
@@ -15,27 +15,27 @@ try:
 except ImportError as e:
     print(f"Ошибка импорта: {e}")
 EOF
-chmod +x ~/test_imports.py
+chmod +x ~/py-imports.py
 
-cat > ~/chrome_check << 'EOF'
+cat > ~/chrome-check << 'EOF'
 systemctl --user list-units | grep chromium-browser
 EOF
-chmod +x ~/chrome_check
+chmod +x ~/chrome-check
 
-cat > ~/chrome_start << 'EOF'
+cat > ~/chrome-start << 'EOF'
 systemd-run --user --slice=snap.slice --setenv=DISPLAY=:0 chromium-browser
 EOF
-chmod +x ~/chrome_start
+chmod +x ~/chrome-start
 
-cat > ~/server_s << 'EOF'
+cat > ~/sscreen << 'EOF'
 python3 ~/test-repository/server_screen_sender.py
 EOF
-chmod +x ~/server_s
+chmod +x ~/sscreen
 
-cat > ~/server_c << 'EOF'
+cat > ~/scommand << 'EOF'
 python3 ~/test-repository/server_command_receiver.py
 EOF
-chmod +x ~/server_c
+chmod +x ~/scommand
 
 
 # Для буфера обмена
@@ -60,7 +60,7 @@ echo ""
 EOF
 chmod +x ~/v
 
-tee ~/encrypt_mp4 > /dev/null << EOF
+tee ~/encrypt > /dev/null << EOF
 python ~/test-repository/basic/crypt/encrypt.py ~/Downloads
 EOF
-chmod +x ~/encrypt_mp4
+chmod +x ~/encrypt
