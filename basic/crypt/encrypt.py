@@ -80,5 +80,5 @@ def main(process_path=None):
 
 
 if __name__ == "__main__":
-    main(r".\test_data")
-    # main()
+    # main(r".\test_data")
+    main()
