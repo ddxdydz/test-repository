@@ -27,7 +27,7 @@ img_path = Path(__file__).parent / "basic" / "image" / "data" / 'a9.jpg'
 
 from basic.image.ToolsManager import ToolsManager
 tools_manager = ToolsManager(1917, 1079, 3, 60, "bin")
-RT, image_array = tools_manager.open(img_path)
+RT, image_array = tools_manager.open()
 print(RT)
 RT1, image_array = tools_manager.convert(image_array)
 print(RT1)

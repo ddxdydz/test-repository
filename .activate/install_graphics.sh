@@ -42,7 +42,7 @@ Environment=XDG_SESSION_TYPE=x11
 Environment=XDG_CURRENT_DESKTOP=XFCE
 ExecStart=/usr/bin/startxfce4
 Restart=always
-User=yc-user
+User=$USER
 
 [Install]
 WantedBy=multi-user.target

@@ -6,9 +6,10 @@ import numpy as np
 from PIL import Image
 from mss import mss
 
-from .compression.base_compressors import BZ2Compressor
+from .compression.base_compressors import BZ2Compressor, ZlibCompressor
 from .difference.GrayscaleDifferenceHandler import GrayscaleDifferenceHandler
 from .packing.NoTampingPacker import NoTampingPacker
+from .packing.ShiftPacker import ShiftPacker
 from .quanting.GrayQuantizer import GrayQuantizer
 from .quanting.RGBQuantizer import RGBQuantizer
 from .quanting.CombQuantizer import CombQuantizer

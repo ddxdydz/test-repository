@@ -103,9 +103,9 @@ if __name__ == "__main__":
             recorder = CommandSenderClient(HOST, PORT_COMMAND_SERVER, True)
 
             # recorder.reset_calibration_xy(658, 328, 18, 28)  # 640x480
-            # recorder.reset_calibration_xy(709, 372, 389, 216)  # 1280x768
+            recorder.reset_calibration_xy(709, 372, 389, 216)  # 1280x768
             # recorder.reset_calibration_by_corners(70, 8, 1850, 1075, 1280, 768)  # 1280x768
-            recorder.reset_calibration_by_corners(424, 180, 855 + 640, 503 + 480, 640, 480)  # 640x480
+            # recorder.reset_calibration_by_corners(424, 180, 855 + 640, 503 + 480, 640, 480)  # 640x480
 
             recorder.connect()
             recorder.start()

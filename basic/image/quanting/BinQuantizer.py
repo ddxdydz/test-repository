@@ -12,11 +12,20 @@ class BinQuantizer(Quantizer):
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
         # Otsu автоматически находит оптимальный порог
-        _, image = cv2.threshold(
-            image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        image = cv2.adaptiveThreshold(
+            image,
+            255,  # Максимальное значение пикселя при выполнении условия
+            cv2.ADAPTIVE_THRESH_MEAN_C,  # Метод: среднее значение окрестности
+            cv2.THRESH_BINARY,  # Тип порога: бинаризация
+            3,  # Размер окрестности (блок 199×199 пикселей)
+            -7  # Константа C, вычитаемая из вычисленного порога
         )
 
         # image = cv2.blur(image, (2, 2))
+        # Структурный элемент для операций (подберите размер под шрифт)
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 4))
+        # image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)  # Удаление мелких точек (шум)
+        # image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)  # Соединение близко расположенных штрихов
 
         return cv2.LUT(image, self._quant_lut)
 

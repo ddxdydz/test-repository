@@ -109,3 +109,18 @@ if __name__ == "__main__":
         client.recv_screen()
         client.show(client.recv_screen()["data"])
     client.close()
+
+"""
+ScreenReceiverClient: Connected to server 10.233.32.76:8888
+ScreenReceiverClient: ToolsManager(1920, 1080, 2, 90) is created!
+1: 1774094802412: 22406 B is received for 238 ms!
+   1774094802499: 22406 B is decoded for 85 ms!
+2: 1774094802616: 1327 B is received for 116 ms!
+   1774094802689: 1327 B is decoded for 72 ms!
+3: 1774094802798: 85 B is received for 107 ms!
+   1774094802873: 85 B is decoded for 73 ms!
+4: 1774094802994: 1721 B is received for 120 ms!
+   1774094803071: 1721 B is decoded for 75 ms!
+5: 1774094803190: 85 B is received for 118 ms!
+   1774094803271: 85 B is decoded for 80 ms!
+"""
