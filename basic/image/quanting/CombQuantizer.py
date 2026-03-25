@@ -5,10 +5,10 @@ from pathlib import Path
 
 import numpy as np
 
-from ..packing.CombPacker import CombPacker
-from ..packing.ShiftPacker import ShiftPacker
-from .ABC_Quantizer import Quantizer
-from .color_utils.generate_soft_palette import generate_soft_palette
+from basic.image.packing.CombPacker import CombPacker
+from basic.image.packing.ShiftPacker import ShiftPacker
+from basic.image.quanting.ABC_Quantizer import Quantizer
+from basic.image.quanting.color_utils.generate_soft_palette import generate_soft_palette
 
 
 class CombQuantizer(Quantizer):

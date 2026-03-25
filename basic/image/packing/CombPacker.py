@@ -3,7 +3,7 @@ from typing import TypeAlias
 import numpy as np
 from numba import njit, prange
 
-from .ShiftPacker import ShiftPacker
+from basic.image.packing.ShiftPacker import ShiftPacker
 
 
 class CombPacker(ShiftPacker):

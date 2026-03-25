@@ -1,9 +1,9 @@
 import threading
 from typing import Optional
 
-from .CooldownChecker import CooldownChecker
-from .command_encoding.Action import Action
-from .core.SocketTransceiver import SocketTransceiver
+from basic.network.CooldownChecker import CooldownChecker
+from basic.network.command_encoding.Action import Action
+from basic.network.core.SocketTransceiver import SocketTransceiver
 
 STOP_COMMAND = (Action.ON_PRESS_SPECIAL, 163, 2)  # ctrl_r
 

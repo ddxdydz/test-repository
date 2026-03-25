@@ -1,0 +1,1 @@
+echo "" > main.cpp;nano main.cpp;./mcompile.sh;./main.exe

@@ -6,15 +6,15 @@ import numpy as np
 from PIL import Image
 from mss import mss
 
-from .compression.base_compressors import BZ2Compressor, ZlibCompressor
-from .difference.GrayscaleDifferenceHandler import GrayscaleDifferenceHandler
-from .packing.NoTampingPacker import NoTampingPacker
-from .packing.ShiftPacker import ShiftPacker
-from .quanting.GrayQuantizer import GrayQuantizer
-from .quanting.RGBQuantizer import RGBQuantizer
-from .quanting.CombQuantizer import CombQuantizer
-from .quanting.BinQuantizer import BinQuantizer
-from .resizing.CVResizerIntScale import CVResizerIntScale
+from basic.image.compression.base_compressors import BZ2Compressor, ZlibCompressor
+from basic.image.difference.GrayscaleDifferenceHandler import GrayscaleDifferenceHandler
+from basic.image.packing.NoTampingPacker import NoTampingPacker
+from basic.image.packing.ShiftPacker import ShiftPacker
+from basic.image.quanting.GrayQuantizer import GrayQuantizer
+from basic.image.quanting.RGBQuantizer import RGBQuantizer
+from basic.image.quanting.CombQuantizer import CombQuantizer
+from basic.image.quanting.BinQuantizer import BinQuantizer
+from basic.image.resizing.CVResizerIntScale import CVResizerIntScale
 
 
 class ToolsManager:
@@ -22,7 +22,7 @@ class ToolsManager:
 
     def __init__(self, width: int = 2, height: int = 2,
                  colors: int = 2, scale_percent: int = 100,
-                 quantizer_type="gray"):
+                 quantizer_type="bin"):
         self.name = self.__class__.__name__
         self.parameters = width, height, colors, scale_percent
         self._resizer = CVResizerIntScale(scale_percent=scale_percent, original_size=(width, height))
@@ -186,9 +186,8 @@ class ToolsManager:
 
 
 if __name__ == "__main__":
-
-    print(ToolsManager())
     tools_manager = ToolsManager(1279, 719, 3, 60)
+    print(ToolsManager())
     for image_name in ["ch1.jpg", "ch2.jpg", "ch3.jpg", "ch3.jpg"]:
         tools_manager.print_divided_line()
         stats, diff, encoded = tools_manager.encode_image(Path(__file__).parent / "data" / image_name)

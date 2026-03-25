@@ -4,8 +4,8 @@ from time import strftime
 import pyautogui
 import pygame
 
+from basic.network.core.time_ms import time_ms
 from client_screen_receiver import ScreenReceiverClient
-from network.core.time_ms import time_ms
 from settings import *
 
 

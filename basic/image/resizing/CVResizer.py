@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from .ABC_ImageResizer import ImageResizer, ResizeMethod
+from basic.image.resizing.ABC_ImageResizer import ImageResizer, ResizeMethod
 
 
 class CVResizer(ImageResizer):

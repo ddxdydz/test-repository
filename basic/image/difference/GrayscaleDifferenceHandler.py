@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from ..resizing.ABC_ImageResizer import ImageResizer
+from basic.image.resizing.ABC_ImageResizer import ImageResizer
 
 
 class GrayscaleDifferenceHandler:

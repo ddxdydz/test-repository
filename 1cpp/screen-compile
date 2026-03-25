@@ -1,0 +1,1 @@
+g++ -Wall -Wextra -g3 -fopenmp screen.cpp -o screen.exe -lX11

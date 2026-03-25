@@ -3,10 +3,10 @@ from typing import Tuple, Dict
 
 import numpy as np
 
-from image.ToolsManager import ToolsManager
-from network.core.SocketTransceiver import SocketTransceiver, SocketTransceiverError
-from network.core.time_ms import time_ms
-from network.screen_transfer.size_constants import *
+from basic.image.ToolsManager import ToolsManager
+from basic.network.core.SocketTransceiver import SocketTransceiver, SocketTransceiverError
+from basic.network.core.time_ms import time_ms
+from basic.network.screen_transfer.size_constants import *
 
 
 class ScreenReceiverClient:

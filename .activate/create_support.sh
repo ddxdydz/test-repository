@@ -17,7 +17,6 @@ except ImportError as e:
 EOF
 chmod +x ~/test_imports.py
 
-
 cat > ~/chrome_check << 'EOF'
 systemctl --user list-units | grep chromium-browser
 EOF
@@ -29,12 +28,12 @@ EOF
 chmod +x ~/chrome_start
 
 cat > ~/server_s << 'EOF'
-PYTHONPATH=/home/yc-user/test-repository python3 ~/test-repository/server/server_screen_sender.py
+python3 ~/test-repository/server_screen_sender.py
 EOF
 chmod +x ~/server_s
 
 cat > ~/server_c << 'EOF'
-PYTHONPATH=/home/yc-user/test-repository python3 ~/test-repository/server/server_command_receiver.py
+python3 ~/test-repository/server_command_receiver.py
 EOF
 chmod +x ~/server_c
 

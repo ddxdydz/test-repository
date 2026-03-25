@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from .ABC_Quantizer import Quantizer
+from basic.image.quanting.ABC_Quantizer import Quantizer
 
 
 class BinQuantizer(Quantizer):
@@ -18,7 +18,7 @@ class BinQuantizer(Quantizer):
             cv2.ADAPTIVE_THRESH_MEAN_C,  # Метод: среднее значение окрестности
             cv2.THRESH_BINARY,  # Тип порога: бинаризация
             3,  # Размер окрестности (блок 199×199 пикселей)
-            -7  # Константа C, вычитаемая из вычисленного порога
+            -26  # Константа C, вычитаемая из вычисленного порога
         )
 
         # image = cv2.blur(image, (2, 2))
@@ -37,9 +37,9 @@ if __name__ == "__main__":
     from pathlib import Path
     from PIL import Image
 
-    quantizer = GrayQuantizer(3)
+    quantizer = BinQuantizer()
 
-    img_path = Path(__file__).parent.parent / "data" / "g2.jpg"
+    img_path = Path(__file__).parent.parent / "data" / "a10.jpg"
     original_img = Image.open(img_path)
     img_array = np.array(original_img, dtype=np.uint8)
     Image.fromarray(quantizer.dequantize(quantizer.quantize(img_array))).show()

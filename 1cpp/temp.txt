@@ -1,0 +1,56 @@
+
+sudo apt update
+sudo apt install libopencv-dev
+
+sudo apt-get install libbz2-dev
+
+sudo apt-get install libx11-dev libcimg-dev
+
+
+
+sudo apt install build-essential cmake \
+    libopencv-dev libopencv-core-dev libopencv-imgproc-dev \
+    libx11-dev
+
+
+Capture time: 0.003375s
+Processing time: 0.018716s
+            
+
+  
+
+// Конвертация XImage в cv::Mat
+std::vector<uint8_t> get_monochrome_map(XImage* x_image) {
+    const uint32_t* src = reinterpret_cast<const uint32_t*>(x_image->data);
+    std::vector<uint32_t> integral_map(width * height, 0);
+    std::vector<uint32_t> grayscale_map(width * height, 0);
+    std::vector<uint8_t> monochrome_map(size, 0);
+
+    for (int y = 0; y < height; ++y) {
+        const int y_base = y * width;
+        uint32_t row_sum = 0;
+        for (int x = 0; x < width; ++x) {
+            // Извлечение значения серого
+            uint32_t px = src[y_base + x];
+            uint32_t grayscale = (px >> 16 & 0xFF) + (px >> 8 & 0xFF) + (px & 0xFF);
+            grayscale_map[y_base + x] = grayscale;
+            // Заполнение интегральной карты
+            row_sum += grayscale;
+            integral_map[y_base + x] = row_sum;
+            if (y > 0) integral_map[y_base + x] += integral_map[(y - 1) * width + x];
+            // Вычисление значения цвета
+            if (y >= 3 && x >= 3) {
+                uint32_t a = integral_map[(y - 3) * width + (x - 3)];
+                uint32_t b = integral_map[(y - 3) * width + (x)];
+                uint32_t c = integral_map[(y) * width + (x - 3)];
+                uint32_t d = integral_map[(y) * width + (x)];
+                int sum = d - c - b + a;
+                if (grayscale_map[(y - 1) * width + (x - 1)] * 9 > sum + C) {
+                    monochrome_map[(y - 1) * width + (x - 1)] = 1;
+                }                
+            }
+        }
+    }
+
+    return monochrome_map;
+}

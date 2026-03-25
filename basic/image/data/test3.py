@@ -9,7 +9,7 @@ def quantize_auto_otsu(image_path):
 
     gray_image = cv2.blur(gray_image, (2, 2))
 
-    # Otsu автоматически находит оптимальный порог
+    # Otsu автоматически находит оптимальный порог (otsu)
     _, binary_image = cv2.threshold(
         gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
     )

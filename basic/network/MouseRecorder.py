@@ -5,9 +5,9 @@ import pyautogui
 from pynput import mouse
 from pynput.mouse import Button
 
-from .CommandSender import CommandSender
-from .command_encoding.Action import Action
-from .command_encoding.settings import SCROLL_ADDITIONAL_VALUE
+from basic.network.CommandSender import CommandSender
+from basic.network.command_encoding.Action import Action
+from basic.network.command_encoding.settings import SCROLL_ADDITIONAL_VALUE
 
 
 class MouseRecorder:

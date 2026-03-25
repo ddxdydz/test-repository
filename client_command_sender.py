@@ -3,10 +3,10 @@ import time
 
 from pynput import keyboard, mouse
 
-from network.CommandSender import CommandSender
-from network.KeyboardRecorder import KeyboardRecorder
-from network.MouseRecorder import MouseRecorder
-from network.core.SocketTransceiver import SocketTransceiver
+from basic.network.CommandSender import CommandSender
+from basic.network.KeyboardRecorder import KeyboardRecorder
+from basic.network.MouseRecorder import MouseRecorder
+from basic.network.core.SocketTransceiver import SocketTransceiver
 from settings import *
 
 

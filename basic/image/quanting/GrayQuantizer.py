@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from .ABC_Quantizer import Quantizer
+from basic.image.quanting.ABC_Quantizer import Quantizer
 
 
 class GrayQuantizer(Quantizer):

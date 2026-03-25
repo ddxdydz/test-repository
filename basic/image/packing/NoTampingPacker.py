@@ -1,6 +1,6 @@
 import numpy as np
 
-from .ABC_Packer import Packer
+from basic.image.packing.ABC_Packer import Packer
 
 
 class NoTampingPacker(Packer):

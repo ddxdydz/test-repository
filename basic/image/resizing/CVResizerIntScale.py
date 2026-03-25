@@ -1,7 +1,7 @@
 from typing import Tuple
 
-from .ABC_ImageResizer import ResizeMethod
-from .CVResizer import CVResizer
+from basic.image.resizing.ABC_ImageResizer import ResizeMethod
+from basic.image.resizing.CVResizer import CVResizer
 
 
 class CVResizerIntScale(CVResizer):

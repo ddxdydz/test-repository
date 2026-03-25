@@ -1,4 +1,4 @@
-from .core.time_ms import time_ms
+from basic.network.core.time_ms import time_ms
 
 
 class CooldownChecker:

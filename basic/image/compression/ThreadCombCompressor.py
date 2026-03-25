@@ -2,7 +2,7 @@ import threading
 from math import ceil
 from typing import List, Optional
 
-from .base_compressors import *
+from basic.image.compression.base_compressors import *
 
 
 class ThreadCombCompressor(Compressor):

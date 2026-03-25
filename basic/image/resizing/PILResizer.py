@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 from PIL import Image
 
-from .ABC_ImageResizer import ImageResizer, ResizeMethod
+from basic.image.resizing.ABC_ImageResizer import ImageResizer, ResizeMethod
 
 
 class PILResizer(ImageResizer):
