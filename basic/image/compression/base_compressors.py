@@ -3,7 +3,7 @@ import gzip
 import lzma
 import zlib
 
-from .ABC_Compressor import Compressor
+from basic.image.compression.ABC_Compressor import Compressor
 
 
 class LZMACompressor(Compressor):
