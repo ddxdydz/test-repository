@@ -8,8 +8,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from .tools.get_paths import get_paths
-from .tools.print_message import print_message, SUCCESS, OK, PROCESSING
+from tools.get_paths import get_paths
+from tools.print_message import print_message, SUCCESS, OK, PROCESSING
 
 PROGRESS_INDICATOR_STEP = 10
 
