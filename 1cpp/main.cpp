@@ -133,7 +133,7 @@ void getMonochromeMap(
         uint8_t* dest_row = monochrome_map.data() + y * width; // указатель на строку результата
         uint8_t* reference_row = reference_map.data() + y * width;
 
-        for (int x = 1; x < width - 1; ++x) {
+        for (int x = 4; x < width - 1; x + 4) {
             uint8_t a1 = gray_lut[prev_row[x - 1]][prev_row[x - 1] + 1][prev_row[x - 1] + 2];
             uint8_t a2 = gray_lut[prev_row[x]][prev_row[x] + 1][prev_row[x] + 2];
             uint8_t a3 = gray_lut[prev_row[x + 1]][prev_row[x + 1] + 1][prev_row[x + 1] + 2];
@@ -243,7 +243,7 @@ int main() {
     std::vector<uint8_t> monochrome_map(size, 0);
     int completed_count;
     int differenced_count;
-    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000);
+    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 200000);
     XDestroyImage(x_image);
     cleanup_x11();
     
