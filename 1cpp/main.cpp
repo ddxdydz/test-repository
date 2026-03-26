@@ -17,14 +17,14 @@ int width;
 int height;
 int size;
 int depth;
-const int C = 4;
+const int C = 2;
 
-static uint8_t gray_lut[256][256][256];
+static uint8_t gray_lut[256 * 256 * 256];
 void initGrayLUT() {
     for (int r = 0; r < 256; r++) {
         for (int g = 0; g < 256; g++) {
             for (int b = 0; b < 256; b++) {
-                gray_lut[r][g][b] = (r * 77 + g * 150 + b * 29) >> 13;
+                gray_lut[(r << 16) | (g << 8) | b] = (r * 77 + g * 150 + b * 29) >> 13;
             }
         }
     }
@@ -119,7 +119,7 @@ void getMonochromeMap(
     int& differenced_count,
     int size_score_th
 ) {
-    const uint8_t* src = reinterpret_cast<const uint8_t*>(x_image->data);
+    const uint32_t* src = reinterpret_cast<const uint32_t*>(x_image->data);
     completed_count = 0;
     differenced_count = 0;
 
@@ -127,22 +127,22 @@ void getMonochromeMap(
     uint8_t prev_px = 0; 
 
     for (int y = 1; y < height - 1; ++y) {
-        const uint8_t* prev_row = src + (y - 1) * width * 4;
-        const uint8_t* curr_row = src + y * width * 4;
-        const uint8_t* next_row = src + (y + 1) * width * 4;
+        const uint32_t* prev_row = src + (y - 1) * width;
+        const uint32_t* curr_row = src + y * width;
+        const uint32_t* next_row = src + (y + 1) * width;
         uint8_t* dest_row = monochrome_map.data() + y * width; // указатель на строку результата
         uint8_t* reference_row = reference_map.data() + y * width;
 
-        for (int x = 4; x < width - 4; x += 4) {
-            uint8_t a1 = gray_lut[prev_row[x - 1]][prev_row[x - 1] + 1][prev_row[x - 1] + 2];
-            uint8_t a2 = gray_lut[prev_row[x]][prev_row[x] + 1][prev_row[x] + 2];
-            uint8_t a3 = gray_lut[prev_row[x + 1]][prev_row[x + 1] + 1][prev_row[x + 1] + 2];
-            uint8_t a4 = gray_lut[curr_row[x - 1]][prev_row[x - 1] + 1][prev_row[x - 1] + 2];
-            uint8_t a5 = gray_lut[curr_row[x]][prev_row[x] + 1][prev_row[x] + 2];
-            uint8_t a6 = gray_lut[curr_row[x + 1]][prev_row[x + 1] + 1][prev_row[x + 1] + 2];
-            uint8_t a7 = gray_lut[next_row[x - 1]][prev_row[x - 1] + 1][prev_row[x - 1] + 2];
-            uint8_t a8 = gray_lut[next_row[x]][prev_row[x] + 1][prev_row[x] + 2];
-            uint8_t a9 = gray_lut[next_row[x + 1]][prev_row[x + 1] + 1][prev_row[x + 1] + 2];
+        for (int x = 1; x < width - 1; ++x) {
+            uint8_t a1 = gray_lut[prev_row[x - 1] >> 8];
+            uint8_t a2 = gray_lut[prev_row[x] >> 8];
+            uint8_t a3 = gray_lut[prev_row[x + 1] >> 8];
+            uint8_t a4 = gray_lut[curr_row[x - 1] >> 8];
+            uint8_t a5 = gray_lut[curr_row[x] >> 8];
+            uint8_t a6 = gray_lut[curr_row[x + 1] >> 8];
+            uint8_t a7 = gray_lut[next_row[x - 1] >> 8];
+            uint8_t a8 = gray_lut[next_row[x] >> 8];
+            uint8_t a9 = gray_lut[next_row[x + 1] >> 8];
             uint8_t px = bin_lut[a1][a2][a3][a4][a5][a6][a7][a8][a9];
             completed_count += 1;
 
@@ -243,7 +243,7 @@ int main() {
     std::vector<uint8_t> monochrome_map(size, 0);
     int completed_count;
     int differenced_count;
-    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 200000);
+    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000);
     XDestroyImage(x_image);
     cleanup_x11();
     
