@@ -1,3 +1,5 @@
+(r << 16) | (g << 8) | b
+
 
 sudo apt update
 sudo apt install libopencv-dev
