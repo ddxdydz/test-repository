@@ -291,7 +291,7 @@ bool server() {
     int opt = 1;
     socklen_t addrlen = sizeof(address);
 
-    const int buffer_size = 65536 * 4; // 64 KB
+    const int buffer_size = 65536 / 4; // 64 KB
 
     // Создаём сокет (аналог socket.socket(AF_INET, SOCK_STREAM))
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -307,11 +307,11 @@ bool server() {
     }
 
     // SO_KEEPALIVE — проверка активности соединения
-//    if (setsockopt(server_fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt))) {
-//        perror("setsockopt SO_KEEPALIVE failed");
-//        close(server_fd);
-//        exit(EXIT_FAILURE);
-//    }
+    if (setsockopt(server_fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt))) {
+        perror("setsockopt SO_KEEPALIVE failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
 
     // TCP_NODELAY — отключаем алгоритм Nagle
     if (setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt))) {
