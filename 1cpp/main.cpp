@@ -24,7 +24,7 @@ void initGrayLUT() {
     for (int r = 0; r < 256; r++) {
         for (int g = 0; g < 256; g++) {
             for (int b = 0; b < 256; b++) {
-                gray_lut[(r << 16) | (g << 8) | b] = (r * 77 + g * 150 + b * 29) >> 13;
+                gray_lut[(r << 16) | (g << 8) | b] = (r * 77 + g * 150 + b * 29) >> 15;
             }
         }
     }
@@ -127,23 +127,12 @@ void getMonochromeMap(
     uint8_t prev_px = 0; 
 
     for (int y = 1; y < height - 1; ++y) {
-        const uint32_t* prev_row = src + (y - 1) * width;
         const uint32_t* curr_row = src + y * width;
-        const uint32_t* next_row = src + (y + 1) * width;
         uint8_t* dest_row = monochrome_map.data() + y * width;
         uint8_t* reference_row = reference_map.data() + y * width;
 
         for (int x = 1; x < width - 1; ++x) {
-            uint8_t a1 = gray_lut[prev_row[x - 1] >> 8];
-            uint8_t a2 = gray_lut[prev_row[x] >> 8];
-            uint8_t a3 = gray_lut[prev_row[x + 1] >> 8];
-            uint8_t a4 = gray_lut[curr_row[x - 1] >> 8];
-            uint8_t a5 = gray_lut[curr_row[x] >> 8];
-            uint8_t a6 = gray_lut[curr_row[x + 1] >> 8];
-            uint8_t a7 = gray_lut[next_row[x - 1] >> 8];
-            uint8_t a8 = gray_lut[next_row[x] >> 8];
-            uint8_t a9 = gray_lut[next_row[x + 1] >> 8];
-            uint8_t px = bin_lut[a1][a2][a3][a4][a5][a6][a7][a8][a9];
+            uint8_t px = gray_lut[curr_row[x] >> 8];
             completed_count += 1;
 
             if (reference_row[x] != px) {
