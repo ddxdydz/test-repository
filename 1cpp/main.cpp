@@ -22,7 +22,7 @@ void initGrayLUT() {
     for (int r = 0; r < 256; r++) {
         for (int g = 0; g < 256; g++) {
             for (int b = 0; b < 256; b++) {
-                gray_lut[(r << 16) | (g << 8) | b] = (140 > (r * 299 + g * 587 + b * 114) >> 10) ? 1 : 0;
+                gray_lut[(r << 16) | (g << 8) | b] = (r * 299 + g * 587 + b * 114) >> 10;
             }
         }
     }
@@ -102,7 +102,7 @@ void getMonochromeMap(
         uint8_t* reference_row = reference_map.data() + y * width;
 
         for (int x = 1; x < width - 1; ++x) {
-            uint8_t px = gray_lut[curr_row[x] >> 8];
+            uint8_t px = (threshold > gray_lut[curr_row[x] >> 8]) ? 1 : 0;
             completed_count += 1;
 
             if (reference_row[x] != px) {
