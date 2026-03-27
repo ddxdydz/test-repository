@@ -21,12 +21,11 @@ class ToolsManager:
     QUANTIZER_MAP = {"gray": GrayQuantizer, "rgb": RGBQuantizer, "comb": CombQuantizer, "bin": BinQuantizer}
 
     def __init__(self, width: int = 2, height: int = 2,
-                 colors: int = 2, scale_percent: int = 100,
-                 quantizer_type="gray"):
+                 colors: int = 2, scale_percent: int = 100):
         self.name = self.__class__.__name__
         self.parameters = width, height, colors, scale_percent
         self._resizer = CVResizerIntScale(scale_percent=scale_percent, original_size=(width, height))
-        self._quantizer = self.QUANTIZER_MAP["bin" if colors == 2 else quantizer_type](colors)
+        self._quantizer = self.QUANTIZER_MAP["gray"](colors)
         self._packer = NoTampingPacker(colors)
         self._compressor = BZ2Compressor()
         self._difference_handler = GrayscaleDifferenceHandler(colors, scale_percent, shape=(height, width))
