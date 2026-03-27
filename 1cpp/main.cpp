@@ -6,6 +6,11 @@
 #include <time.h>
 #include <iostream>
 #include <bzlib.h>
+#include <cstring>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 using namespace cimg_library;
 
@@ -152,6 +157,37 @@ void compressWithBzip2(
     compressed_size = temp_size;
 }
 
+// Функция для надёжной отправки данных (гарантирует отправку всех байтов)
+ssize_t reliable_send(int sockfd, const void* buf, size_t len) {
+    const uint8_t* ptr = static_cast<const uint8_t*>(buf);
+    size_t total_sent = 0;
+
+    while (total_sent < len) {
+        ssize_t sent = send(sockfd, ptr + total_sent, len - total_sent, 0);
+        if (sent == -1) {
+            perror("send failed");
+            return -1;
+        }
+        if (sent == 0) {
+            // Клиент отключился
+            std::cout << "Client disconnected during send\n";
+            return 0;
+        }
+        total_sent += sent;
+    }
+    return total_sent;
+}
+
+// Функция для генерации массива
+std::vector<uint8_t> generate_array() {
+    std::vector<uint8_t> monochrome_map(1263, 0);
+    // Заполняем массив какими‑то данными (для примера — последовательность)
+    for (size_t i = 0; i < monochrome_map.size(); ++i) {
+        monochrome_map[i] = static_cast<uint8_t>(i % 256);
+    }
+    return monochrome_map;
+}
+
 // Конвертация monochrome в CImg<unsigned char>
 CImg<unsigned char> monochrome_to_cimg(const std::vector<uint8_t>& monochrome_map) {
     // Проверка корректности размеров
@@ -186,7 +222,8 @@ bool save_to_bmp(const CImg<unsigned char>& image, const char* filename) {
     }
 }
 
-int main() {    
+// Сохранение изображения в BMP через CImg
+bool screen() {
     if (!init_x11()) { return false; }
     std::vector<uint8_t> reference_map(size, 0);
 
@@ -202,10 +239,10 @@ int main() {
     std::vector<uint8_t> monochrome_map(size, 0);
     int completed_count;
     int differenced_count;
-    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000, 140);
+    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000, 155);
     XDestroyImage(x_image);
     cleanup_x11();
-    
+
     // Compressing
     std::vector<uint8_t> output_buffer;
     size_t output_size;
@@ -215,4 +252,118 @@ int main() {
     save_to_bmp(monochrome_to_cimg(monochrome_map), "test.bmp");
     std::cout << output_size << " B" << "\n";
     std::cout << proc_time << " ms" << "\n";
+}
+
+bool server() {
+    if (!init_x11()) { return false; }
+    std::vector<uint8_t> reference_map(size, 0);
+
+    int server_fd, client_fd;
+    struct sockaddr_in address;
+    int opt = 1;
+    socklen_t addrlen = sizeof(address);
+
+    // Создаём сокет
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Устанавливаем опцию SO_REUSEADDR
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+        perror("setsockopt failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(8888);
+
+    // Привязываем сокет к адресу
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // Слушаем входящие соединения (только одно соединение в очереди)
+    if (listen(server_fd, 1) < 0) {
+        perror("listen failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Server listening on port 8080...\n";
+
+    // Принимаем единственное соединение
+    if ((client_fd = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
+        perror("accept failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Client connected\n";
+
+    // Основной цикл работы
+    while (true) {
+        // Ждём запрос от клиента (простой приём одного байта как сигнала)
+        char request;
+        ssize_t bytes_received = recv(client_fd, &request, 1, 0);
+
+        if (bytes_received <= 0) {
+            // Клиент отключился или ошибка
+            if (bytes_received == 0) {
+                std::cout << "Client disconnected\n";
+            } else {
+                perror("recv failed");
+            }
+            break;
+        }
+
+        // Генерируем массив
+        // Capture
+        clock_t start = clock();
+        XImage* x_image = capture_screen_image();
+        if (!x_image) {cleanup_x11(); return false;}
+        // Processing
+        std::vector<uint8_t> monochrome_map(size, 0);
+        int completed_count;
+        int differenced_count;
+        getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000, 155);
+        XDestroyImage(x_image);
+        cleanup_x11();
+        // Compressing
+        std::vector<uint8_t> output_buffer;
+        size_t output_size;
+        compressWithBzip2(monochrome_map, output_buffer, output_size);
+        uint32_t data_size = static_cast<uint32_t>(output_size);
+        int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
+        std::cout << output_size << " B" << "\n";
+        std::cout << proc_time << " ms" << "\n";
+
+        // Отправляем заголовок (4 байта с длиной массива)
+        uint32_t network_size = htonl(data_size);
+        if (reliable_send(client_fd, &network_size, sizeof(network_size)) <= 0) {
+            break;
+        }
+
+        // Отправляем сам массив
+        if (reliable_send(client_fd, output_buffer.data(), output_buffer.size()) <= 0) {
+            break;
+        }
+
+        std::cout << "Sent array of " << data_size << " bytes\n";
+    }
+
+    // Закрываем соединения
+    close(client_fd);
+    close(server_fd);
+
+    std::cout << "Server terminated\n";
+    return 0;
+}
+
+int main() {    
+    server();
 }
