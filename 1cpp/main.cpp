@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 
 using namespace cimg_library;
@@ -280,19 +281,43 @@ bool server() {
     int opt = 1;
     socklen_t addrlen = sizeof(address);
 
-    // Создаём сокет
+    const int buffer_size = 65536; // 64 KB
+
+    // Создаём сокет (аналог socket.socket(AF_INET, SOCK_STREAM))
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
 
-    // Устанавливаем опцию SO_REUSEADDR
+    // Устанавливаем SO_REUSEADDR (как в вашем примере)
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-        perror("setsockopt failed");
+        perror("setsockopt SO_REUSEADDR failed");
         close(server_fd);
         exit(EXIT_FAILURE);
     }
 
+    // SO_KEEPALIVE — проверка активности соединения
+    if (setsockopt(server_fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt))) {
+        perror("setsockopt SO_KEEPALIVE failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // TCP_NODELAY — отключаем алгоритм Nagle
+    if (setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt))) {
+        perror("setsockopt TCP_NODELAY failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // SO_SNDBUF — размер буфера отправки
+    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &buffer_size, sizeof(buffer_size))) {
+        perror("setsockopt SO_SNDBUF failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // Настройка адреса и порта
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
@@ -360,15 +385,13 @@ bool server() {
         compressWithBzip2(monochrome_map, output_buffer, output_size);
         std::vector<uint8_t> data = createCombinedArrayWithMemcpy(output_size, output_buffer);
         int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
-        std::cout << output_size << " B" << "\n";
-        std::cout << proc_time << " ms" << "\n";
 
         // Отправляем заголовок (4 байта с длиной массива)
         if (reliable_send(client_fd, data.data(), data.size()) <= 0) {
             break;
         }
 
-        std::cout << "Sent array of " << data.size() << " bytes\n";
+        std::cout << "Sent array of " << data.size() << " bytes in " << proc_time << " ms\n";
     }
 
     // Закрываем соединения

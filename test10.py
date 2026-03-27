@@ -39,6 +39,7 @@ class ScreenReceiverClient:
         _request_time_ms = time_ms()
         print("1")
         self._socket_transceiver.send_raw(b"\x01")
+        print("2")
         received = self._socket_transceiver.recv_framed()
         print(time_ms() - _request_time_ms, "ms, ", len(received), "B")
         return received

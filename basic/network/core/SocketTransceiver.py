@@ -126,7 +126,9 @@ class SocketTransceiver:
     def recv_framed(self) -> bytes:
         """Получает одно сообщение в режиме с фреймингом."""
         size_bytes = self._recv_all(self.header_size)
+        print(size_bytes)
         size = int.from_bytes(size_bytes, 'big', signed=False)
+        print(size)
         return self._recv_all(size)
 
     def _send_all(self, data: bytes):
