@@ -293,7 +293,6 @@ bool server() {
         exit(EXIT_FAILURE);
     }
 
-    // Настройка адреса и порта
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
@@ -369,7 +368,7 @@ bool server() {
             break;
         }
 
-        std::cout << "Sent array of " << data.data() << " bytes\n";
+        std::cout << "Sent array of " << data.size() << " bytes\n";
     }
 
     // Закрываем соединения
