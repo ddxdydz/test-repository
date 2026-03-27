@@ -385,9 +385,10 @@ bool server() {
         }
 
         // Координаты курсора
-        uint16_t root_x, root_y, win_x, win_y, root_return, child_return;
+        uint16_t root_x, root_y, win_x, win_y;
+        int root_return, child_return;
         unsigned int mask_return;
-        Bool result = XQueryPointer(
+        XQueryPointer(
             display, root_window, &root_return, &child_return,
             &root_x, &root_y,  // координаты относительно корневого окна
             &win_x, &win_y,    // координаты относительно окна под курсором
