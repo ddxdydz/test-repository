@@ -260,15 +260,24 @@ bool screen() {
     return 0;
 }
 
+
 std::vector<uint8_t> createCombinedArrayWithMemcpy(size_t size, const std::vector<uint8_t>& buffer) {
-    std::vector<uint8_t> combined(4 + buffer.size()); // резервируем место
+    // Убедимся, что размер помещается в 32 бита
+    if (size > 0xFFFFFFFF) {
+        throw std::runtime_error("Buffer size too large for 32-bit encoding");
+    }
 
-    // Копируем size в первые 4 байта
-    std::memcpy(combined.data(), &size, 4);
+    uint32_t size32 = static_cast<uint32_t>(size);
+    std::vector<uint8_t> combined(4 + buffer.size());
 
-    // Копируем данные буфера после size
+    // Копируем 4 байта в порядке big-endian (сетевой порядок)
+    combined[0] = (size32 >> 24) & 0xFF;
+    combined[1] = (size32 >> 16) & 0xFF;
+    combined[2] = (size32 >> 8)  & 0xFF;
+    combined[3] = size32 & 0xFF;
+
+    // Копируем данные буфера
     std::memcpy(combined.data() + 4, buffer.data(), buffer.size());
-
     return combined;
 }
 
