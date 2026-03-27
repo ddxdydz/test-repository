@@ -413,11 +413,14 @@ bool server() {
                 cords, createCombinedArrayWithMemcpy(output_size, output_buffer)
             );
         } else {
-            std::cout << "Sent array of";
-            auto temp = createCombinedArrayWithMemcpy(
-                cords, createCombinedArrayWithMemcpy(0, std::vector<uint8_t>{0})
-            );
-            std::vector<uint8_t> data(temp.begin(), temp.begin() + std::min<size_t>(8, temp.size()));
+            std::cout << "debug S423324";
+            data = {
+                (uint8_t)((cords >> 24) & 0xFF),
+                (uint8_t)((cords >> 16) & 0xFF),
+                (uint8_t)((cords >> 8)  & 0xFF),
+                (uint8_t)(cords & 0xFF),
+                0, 0, 0, 0
+            };
         }
         int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
 
