@@ -413,9 +413,10 @@ bool server() {
                 cords, createCombinedArrayWithMemcpy(output_size, output_buffer)
             );
         } else {
-            data = createCombinedArrayWithMemcpy(
-                cords, createCombinedArrayWithMemcpy(0, std::vector<uint8_t>(1, 0))
-            )[:8];
+            auto temp = createCombinedArrayWithMemcpy(cords,
+                createCombinedArrayWithMemcpy(0, std::vector<uint8_t>{0})
+            );
+            std::vector<uint8_t> data(temp.begin(), temp.begin() + std::min<size_t>(8, temp.size()));
         }
         int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
 
