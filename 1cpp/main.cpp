@@ -394,7 +394,7 @@ bool server() {
             &win_x, &win_y,    // координаты относительно окна под курсором
             &mask_return
         );
-        std::cout << "X = " << root_x << ", Y = " << root_y << "\n";
+        uint32_t cords = (root_x << 16) | root_y;
 
         // Processing
         std::vector<uint8_t> monochrome_map(size, 0);
@@ -404,10 +404,23 @@ bool server() {
         XDestroyImage(x_image);
 
         // Compressing
-        std::vector<uint8_t> output_buffer;
-        size_t output_size;
-        compressWithBzip2(monochrome_map, output_buffer, output_size);
-        std::vector<uint8_t> data = createCombinedArrayWithMemcpy(output_size, output_buffer);
+        std::vector<uint8_t> data;
+        if (differenced_count > 0) {
+            std::vector<uint8_t> output_buffer;
+            size_t output_size;
+            compressWithBzip2(monochrome_map, output_buffer, output_size);
+            data = createCombinedArrayWithMemcpy(
+                cords, createCombinedArrayWithMemcpy(output_size, output_buffer)
+            );
+        } else {
+            data = createCombinedArrayWithMemcpy(
+                cords, createCombinedArrayWithMemcpy(0, [0])
+            );
+        }
+
+        std::vector<uint8_t> data = createCombinedArrayWithMemcpy(
+            cords, createCombinedArrayWithMemcpy(output_size, output_buffer)
+        );
         int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
 
         // Отправляем заголовок (4 байта с длиной массива)
