@@ -226,7 +226,7 @@ bool save_to_bmp(const CImg<unsigned char>& image, const char* filename) {
 }
 
 // Сохранение изображения в BMP через CImg
-bool screen() {
+void screen() {
     if (!init_x11()) { return false; }
     std::vector<uint8_t> reference_map(size, 0);
 
@@ -345,7 +345,6 @@ bool server() {
         std::cout << 2 << "\n";
 
         XDestroyImage(x_image);
-        cleanup_x11();
 
         std::cout << 3 << "\n";
 
@@ -375,6 +374,8 @@ bool server() {
     // Закрываем соединения
     close(client_fd);
     close(server_fd);
+
+    cleanup_x11();
 
     std::cout << "Server terminated\n";
     return 0;
