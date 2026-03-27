@@ -74,7 +74,7 @@ XImage* capture_screen_image() {
         ZPixmap
     );
     if (!image) {
-        fprintf(stderr, "Error: all capture methods failed (depth=%d)\n", depth);
+        fprintf(stderr, "Error: capture methods failed\n");
     }
     return image;
 }
