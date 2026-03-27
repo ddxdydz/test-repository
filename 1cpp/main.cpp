@@ -361,7 +361,8 @@ bool server() {
     while (true) {
         // Ждём запрос от клиента (простой приём одного байта как сигнала)
         char request;
-        ssize_t bytes_received = recv(client_fd, &request, 1, 0);
+        uint8_t bytes_received = recv(client_fd, &request, 1, 0);
+        std::cout << "bytes_received = " << bytes_received << "\n";
 
         if (bytes_received <= 0) {
             // Клиент отключился или ошибка
@@ -384,15 +385,15 @@ bool server() {
         }
 
         // Координаты курсора
-        uint16_t root_x, root_y, win_x, win_y;
+        uint16_t root_x, root_y, win_x, win_y, root_return, child_return;
         unsigned int mask_return;
         Bool result = XQueryPointer(
-            display, root, &root_return, &child_return,
+            display, root_window, &root_return, &child_return,
             &root_x, &root_y,  // координаты относительно корневого окна
             &win_x, &win_y,    // координаты относительно окна под курсором
             &mask_return
         );
-        std::cout << "X = " << root_x << ", Y = " << root_y << " ms\n";
+        std::cout << "X = " << root_x << ", Y = " << root_y << "\n";
 
         // Processing
         std::vector<uint8_t> monochrome_map(size, 0);

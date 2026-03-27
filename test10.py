@@ -37,7 +37,7 @@ class ScreenReceiverClient:
     def recv_screen(self):
         # Sending request, Receiving
         _request_time_ms = time_ms()
-        self._socket_transceiver.send_raw(b"\x01")
+        self._socket_transceiver.send_raw(threshold.to_bytes(1, 'big', signed=False))
         received = self._socket_transceiver.recv_framed()
         print(time_ms() - _request_time_ms, "ms, ", len(received), "B")
         return received
@@ -61,6 +61,7 @@ def process_screen_receiving():
 
 if __name__ == "__main__":
     SCREEN_SIZE = (1024, 768)
+    threshold = 150
 
     bz2 = BZ2Compressor()
     reference_data = np.zeros(SCREEN_SIZE[0] * SCREEN_SIZE[1], dtype=np.uint8)
