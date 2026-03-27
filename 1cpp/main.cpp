@@ -127,7 +127,6 @@ void getMonochromeMap(
     int size_score = 0;
     uint8_t prev_px = 0;
 
-    // Выравнивание ширины для SIMD
     const int simd_width = (width - 2) & ~15; // Округление до кратного 16
 
     for (int y = 1; y < height - 1; ++y) {
@@ -135,49 +134,45 @@ void getMonochromeMap(
         uint8_t* dest_row = monochrome_map.data() + y * width;
         uint8_t* reference_row = reference_map.data() + y * width;
 
-        // SIMD-обработка основной части строки
         for (int x = 1; x < simd_width; x += 16) {
-            // Загрузка 16 пикселей (каждый 32-битный)
-            __m128i pixels32 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(curr_row + x));
+            // Загрузка 4 пикселей (32-битных) за раз — всего 16 байт
+            __m128i pixels1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(curr_row + x));
 
-            // Извлечение старших байт (R/G/B компоненты) и преобразование в оттенки серого
-            __m128i gray_pixels = _mm_shuffle_epi8(pixels32, _mm_setr_epi8(
-                1, 5, 9, 13, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1
-            ));
+            // Извлечение старших байтов (компонент цвета) через сдвиги и маски
+            __m128i bytes = _mm_srli_epi32(pixels1, 8); // Сдвиг вправо на 8 бит
+            bytes = _mm_and_si128(bytes, _mm_set1_epi32(0xFF)); // Маска для выделения байта
 
-            // Применение LUT через таблицу поиска (требуется предварительная инициализация gray_lut)
-            // Для простоты используем арифметическое преобразование (пример)
-            gray_pixels = _mm_srli_epi32(pixels32, 8); // Сдвиг для получения компонента
-            gray_pixels = _mm_and_si128(gray_pixels, _mm_set1_epi32(0xFF));
-
-            // Преобразование в 8-битные значения
-            __m128i gray8 = _mm_packus_epi32(gray_pixels, gray_pixels);
-            gray8 = _mm_packus_epi16(gray8, gray8);
+            // Преобразование в 8-битные значения через pack
+            __m128i packed = _mm_packs_epi32(_mm_srli_epi64(bytes, 8), bytes);
+            __m128i gray8 = _mm_packus_epi16(packed, packed);
 
             // Загрузка эталонных пикселей
             __m128i ref_pixels = _mm_loadu_si128(reinterpret_cast<const __m128i*>(reference_row + x));
 
-            // Сравнение с эталонными значениями
+            // Сравнение: получаем маску где gray8 != ref_pixels
             __m128i diff_mask = _mm_cmpeq_epi8(gray8, ref_pixels);
-            diff_mask = _mm_xor_si128(diff_mask, _mm_set1_epi8(-1)); // Инверсия маски
+            diff_mask = _mm_xor_si128(diff_mask, _mm_set1_epi8(-1)); // Инверсия: 0 → -1, -1 → 0
 
-            // Подсчёт изменённых пикселей
-            int diff_count = _mm_popcnt_u32(_mm_movemask_epi8(diff_mask));
+            // Подсчёт различий через горизонтальное суммирование
+            int mask = _mm_movemask_epi8(diff_mask);
+            int diff_count = __builtin_popcount(mask); // Подсчёт единиц в битовой маске
             differenced_count += diff_count;
 
-            // Обновление эталонных значений там, где есть различия
-            ref_pixels = _mm_blendv_epi8(ref_pixels, gray8, diff_mask);
-            _mm_storeu_si128(reinterpret_cast<__m128i*>(reference_row + x), ref_pixels);
+            // Обновление эталонных значений: используем побитовые операции вместо _mm_blendv_epi8
+            __m128i updated_ref = _mm_or_si128(
+                _mm_and_si128(ref_pixels, _mm_xor_si128(diff_mask, _mm_set1_epi8(-1))),
+                _mm_and_si128(gray8, diff_mask)
+            );
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(reference_row + x), updated_ref);
 
             // Формирование монохромной карты: 1 там, где есть различия
-            __m128i mono_pixels = diff_mask;
+            __m128i mono_pixels = _mm_slli_epi32(diff_mask, 7); // Сдвиг для получения 0/1
+            mono_pixels = _mm_srli_epi32(mono_pixels, 7);
             _mm_storeu_si128(reinterpret_cast<__m128i*>(dest_row + x), mono_pixels);
 
-            // Обновляем счётчики
             completed_count += 16;
 
-            // Обработка size_score — сложнее векторизовать, поэтому оставим скалярно
+            // Обработка size_score (скалярная часть)
             for (int i = 0; i < 16; ++i) {
                 uint8_t current = ((uint8_t*)&mono_pixels)[i];
                 if (current != prev_px) {
@@ -189,7 +184,7 @@ void getMonochromeMap(
             if (size_score > size_score_th) break;
         }
 
-        // Скалярная обработка остатка строки (если ширина не кратна 16)
+        // Скалярная обработка остатка строки
         for (int x = simd_width + 1; x < width - 1; ++x) {
             uint8_t px = gray_lut[curr_row[x] >> 8];
             completed_count += 1;
