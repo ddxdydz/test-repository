@@ -259,6 +259,18 @@ bool screen() {
     return 0;
 }
 
+std::vector<uint8_t> createCombinedArrayWithMemcpy(size_t size, const std::vector<uint8_t>& buffer) {
+    std::vector<uint8_t> combined(4 + buffer.size()); // резервируем место
+
+    // Копируем size в первые 4 байта
+    std::memcpy(combined.data(), &size, 4);
+
+    // Копируем данные буфера после size
+    std::memcpy(combined.data() + 4, buffer.data(), buffer.size());
+
+    return combined;
+}
+
 bool server() {
     if (!init_x11()) { return false; }
     std::vector<uint8_t> reference_map(size, 0);
@@ -336,37 +348,23 @@ bool server() {
             exit(EXIT_FAILURE);
         }
         // Processing
-
-        std::cout << 1 << "\n";
-
         std::vector<uint8_t> monochrome_map(size, 0);
         int completed_count;
         int differenced_count;
         getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, MAX_SIZE_SCORE, 155);
-
-        std::cout << 2 << "\n";
-
         XDestroyImage(x_image);
-
-        std::cout << 3 << "\n";
 
         // Compressing
         std::vector<uint8_t> output_buffer;
         size_t output_size;
         compressWithBzip2(monochrome_map, output_buffer, output_size);
-        uint32_t data_size = static_cast<uint32_t>(output_size);
+        std::vector<uint8_t> data = createCombinedArrayWithMemcpy(output_size, output_buffer);
         int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
         std::cout << output_size << " B" << "\n";
         std::cout << proc_time << " ms" << "\n";
 
         // Отправляем заголовок (4 байта с длиной массива)
-        uint32_t network_size = htonl(data_size);
-        if (reliable_send(client_fd, &network_size, sizeof(network_size)) <= 0) {
-            break;
-        }
-
-        // Отправляем сам массив
-        if (reliable_send(client_fd, output_buffer.data(), output_buffer.size()) <= 0) {
+        if (reliable_send(client_fd, data.data(), data.size()) <= 0) {
             break;
         }
 
