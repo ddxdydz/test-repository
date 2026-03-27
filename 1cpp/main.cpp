@@ -369,7 +369,7 @@ bool server() {
             break;
         }
 
-        std::cout << "Sent array of " << data_size << " bytes\n";
+        std::cout << "Sent array of " << data.data() << " bytes\n";
     }
 
     // Закрываем соединения
