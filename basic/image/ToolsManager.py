@@ -18,7 +18,7 @@ from basic.image.resizing.CVResizerIntScale import CVResizerIntScale
 
 
 class ToolsManager:
-    QUANTIZER_MAP = {"gray": GrayQuantizer, "rgb": RGBQuantizer, "comb": CombQuantizer, "bin": BinQuantizer}
+    QUANTIZER_MAP = {"gray": GrayQuantizer, "rgb": RGBQuantizer, "comb": CombQuantizer, "bray": BinQuantizer}
 
     def __init__(self, width: int = 2, height: int = 2,
                  colors: int = 2, scale_percent: int = 100,

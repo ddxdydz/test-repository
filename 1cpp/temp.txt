@@ -1,5 +1,5 @@
 (r << 16) | (g << 8) | b
-
+(monochrome_map[index] == 0) ? 0 : 255
 
 sudo apt update
 sudo apt install libopencv-dev
