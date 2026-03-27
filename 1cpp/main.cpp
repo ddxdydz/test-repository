@@ -130,7 +130,7 @@ void getMonochromeMap(
         const uint32_t* prev_row = src + (y - 1) * width;
         const uint32_t* curr_row = src + y * width;
         const uint32_t* next_row = src + (y + 1) * width;
-        uint8_t* dest_row = monochrome_map.data() + y * width; // указатель на строку результата
+        uint8_t* dest_row = monochrome_map.data() + y * width;
         uint8_t* reference_row = reference_map.data() + y * width;
 
         for (int x = 1; x < width - 1; ++x) {
