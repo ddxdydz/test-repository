@@ -314,11 +314,11 @@ bool server() {
     }
 
     // TCP_NODELAY — отключаем алгоритм Nagle
-    if (setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt))) {
-        perror("setsockopt TCP_NODELAY failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
+//    if (setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt))) {
+//        perror("setsockopt TCP_NODELAY failed");
+//        close(server_fd);
+//        exit(EXIT_FAILURE);
+//    }
 
     // SO_SNDBUF — размер буфера отправки
     if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &buffer_size, sizeof(buffer_size))) {
