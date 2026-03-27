@@ -360,7 +360,7 @@ bool server() {
     // Основной цикл работы
     while (true) {
         // Ждём запрос от клиента (простой приём одного байта как сигнала)
-        char request;
+        uint8_t request;
         uint8_t bytes_received = recv(client_fd, &request, 1, 0);
         std::cout << "bytes_received = " << request << "\n";
 
