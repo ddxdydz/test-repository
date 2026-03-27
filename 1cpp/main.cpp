@@ -226,7 +226,7 @@ bool save_to_bmp(const CImg<unsigned char>& image, const char* filename) {
 }
 
 // Сохранение изображения в BMP через CImg
-void screen() {
+bool screen() {
     if (!init_x11()) { return false; }
     std::vector<uint8_t> reference_map(size, 0);
 
@@ -234,8 +234,9 @@ void screen() {
     clock_t start = clock();
     XImage* x_image = capture_screen_image();
     if (!x_image) {
+        perror("capture_screen_image failed");
         cleanup_x11();
-        return false;
+        exit(EXIT_FAILURE);
     }
 
     // Processing
@@ -255,6 +256,7 @@ void screen() {
     save_to_bmp(monochrome_to_cimg(monochrome_map), "test.bmp");
     std::cout << output_size << " B" << "\n";
     std::cout << proc_time << " ms" << "\n";
+    return 0;
 }
 
 bool server() {
