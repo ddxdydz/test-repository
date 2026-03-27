@@ -284,6 +284,7 @@ std::vector<uint8_t> createCombinedArrayWithMemcpy(size_t size, const std::vecto
 
 bool server() {
     if (!init_x11()) { return false; }
+    uint8_t threshold = 155;
     std::vector<uint8_t> reference_map(size, 0);
 
     int server_fd, client_fd;
@@ -362,6 +363,11 @@ bool server() {
         // Ждём запрос от клиента (простой приём одного байта как сигнала)
         uint8_t request;
         uint8_t bytes_received = recv(client_fd, &request, 1, 0);
+        if (5 < request && request < 255) {
+            threshold = request;
+            std::cout << "threshold = " << threshold << "\n";
+        }
+
         std::cout << "bytes_received = " << static_cast<int>(request) << "\n";
 
         if (bytes_received <= 0) {
@@ -400,7 +406,10 @@ bool server() {
         std::vector<uint8_t> monochrome_map(size, 0);
         int completed_count;
         int differenced_count;
-        getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, MAX_SIZE_SCORE, 155);
+        getMonochromeMap(
+            x_image, monochrome_map, reference_map,
+            completed_count, differenced_count, MAX_SIZE_SCORE, threshold
+        );
         XDestroyImage(x_image);
 
         // Compressing
