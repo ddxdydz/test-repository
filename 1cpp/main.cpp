@@ -363,12 +363,12 @@ bool server() {
         // Ждём запрос от клиента (простой приём одного байта как сигнала)
         uint8_t request;
         uint8_t bytes_received = recv(client_fd, &request, 1, 0);
-        if (5 < request && request < 255) {
-            threshold = request;
-            std::cout << "threshold = " << threshold << "\n";
+        if (threshold != request) {
+            if (5 < request && request < 255) {
+                threshold = request;
+//                std::cout << "threshold -> " << static_cast<int>(request) << "\n";
+            }
         }
-
-        std::cout << "bytes_received = " << static_cast<int>(request) << "\n";
 
         if (bytes_received <= 0) {
             // Клиент отключился или ошибка
@@ -437,7 +437,7 @@ bool server() {
             break;
         }
 
-        std::cout << "Sent array of " << data.size() << " bytes in " << proc_time << " ms\n";
+//        std::cout << "Sent array of " << data.size() << " bytes in " << proc_time << " ms\n";
     }
 
     // Закрываем соединения

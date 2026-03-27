@@ -90,10 +90,10 @@ if __name__ == "__main__":
                 if event.key == pygame.K_ESCAPE and is_inactive:
                     running = False
                 elif event.key == 1073741904:  # <--
-                    threshold -= 10 if threshold > 20 else 0
+                    threshold -= 5 if threshold > 20 else 0
                     print(threshold)
                 elif event.key == 1073741903:  # -->
-                    threshold += 10 if threshold < 245 else 0
+                    threshold += 5 if threshold < 245 else 0
                     print(threshold)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and is_inactive:
