@@ -24,7 +24,7 @@ void initGrayLUT() {
     for (int r = 0; r < 256; r++) {
         for (int g = 0; g < 256; g++) {
             for (int b = 0; b < 256; b++) {
-                gray_lut[(r << 16) | (g << 8) | b] = (r * 77 + g * 150 + b * 29) >> 15;
+                gray_lut[(r << 16) | (g << 8) | b] = (r * 77 + g * 150 + b * 29) >> 14;
             }
         }
     }
