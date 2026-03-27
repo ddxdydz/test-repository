@@ -202,7 +202,7 @@ int main() {
     std::vector<uint8_t> monochrome_map(size, 0);
     int completed_count;
     int differenced_count;
-    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000, 100);
+    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000, 140);
     XDestroyImage(x_image);
     cleanup_x11();
     
