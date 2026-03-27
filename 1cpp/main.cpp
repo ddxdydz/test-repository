@@ -14,6 +14,9 @@
 
 using namespace cimg_library;
 
+int PORT = 8888;
+int MAX_SIZE_SCORE = 2000;
+
 Display* display = nullptr;
 Window root_window;
 int screen_num;
@@ -278,7 +281,7 @@ bool server() {
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(8888);
+    address.sin_port = htons(PORT);
 
     // Привязываем сокет к адресу
     if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
@@ -294,7 +297,7 @@ bool server() {
         exit(EXIT_FAILURE);
     }
 
-    std::cout << "Server listening on port 8080...\n";
+    std::cout << "Server listening on port " << PORT << "...\n";
 
     // Принимаем единственное соединение
     if ((client_fd = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
@@ -325,14 +328,27 @@ bool server() {
         // Capture
         clock_t start = clock();
         XImage* x_image = capture_screen_image();
-        if (!x_image) {cleanup_x11(); return false;}
+        if (!x_image) {
+            perror("capture_screen_image failed");
+            cleanup_x11();
+            exit(EXIT_FAILURE);
+        }
         // Processing
+
+        std::cout << 1 << "\n";
+
         std::vector<uint8_t> monochrome_map(size, 0);
         int completed_count;
         int differenced_count;
-        getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000, 155);
+        getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, MAX_SIZE_SCORE, 155);
+
+        std::cout << 2 << "\n";
+
         XDestroyImage(x_image);
         cleanup_x11();
+
+        std::cout << 3 << "\n";
+
         // Compressing
         std::vector<uint8_t> output_buffer;
         size_t output_size;
