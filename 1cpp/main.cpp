@@ -297,32 +297,25 @@ bool server() {
     }
 
     // SO_KEEPALIVE — проверка активности соединения
-    if (setsockopt(server_fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt))) {
-        perror("setsockopt SO_KEEPALIVE failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
-
-    // TCP_NODELAY — отключаем алгоритм Nagle
-    if (setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt))) {
-        perror("setsockopt TCP_NODELAY failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
-
-    // SO_SNDBUF — размер буфера отправки
-    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &buffer_size, sizeof(buffer_size))) {
-        perror("setsockopt SO_SNDBUF failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
-
-    // SO_RCVBUF — размер буфера приёма
-    if (setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &buffer_size, sizeof(buffer_size))) {
-        perror("setsockopt SO_RCVBUF failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
+//    if (setsockopt(server_fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt))) {
+//        perror("setsockopt SO_KEEPALIVE failed");
+//        close(server_fd);
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    // TCP_NODELAY — отключаем алгоритм Nagle
+//    if (setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt))) {
+//        perror("setsockopt TCP_NODELAY failed");
+//        close(server_fd);
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    // SO_SNDBUF — размер буфера отправки
+//    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &buffer_size, sizeof(buffer_size))) {
+//        perror("setsockopt SO_SNDBUF failed");
+//        close(server_fd);
+//        exit(EXIT_FAILURE);
+//    }
 
     // Настройка адреса и порта
     address.sin_family = AF_INET;

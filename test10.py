@@ -37,6 +37,7 @@ class ScreenReceiverClient:
     def recv_screen(self):
         # Sending request, Receiving
         _request_time_ms = time_ms()
+        print("1")
         self._socket_transceiver.send_raw(b"\x01")
         received = self._socket_transceiver.recv_framed()
         print(time_ms() - _request_time_ms, "ms, ", len(received), "B")
@@ -68,6 +69,7 @@ if __name__ == "__main__":
     client = ScreenReceiverClient(HOST, PORT_SCREEN_SERVER)
     print(f"Connecting to server {HOST}:{PORT_SCREEN_SERVER}...")
     client.connect()
+    print(f"Connected.")
 
     blit_data_queue = []
     blit_data_queue_lock = threading.Lock()
