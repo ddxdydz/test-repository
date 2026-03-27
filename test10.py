@@ -36,6 +36,7 @@ class ScreenReceiverClient:
         x = int.from_bytes(self._socket_transceiver.recv_raw(2), 'big', signed=False)
         y = int.from_bytes(self._socket_transceiver.recv_raw(2), 'big', signed=False)
         received_size = int.from_bytes(self._socket_transceiver.recv_raw(4), 'big', signed=False)
+        print(received_size)
         received = self._socket_transceiver.recv_raw(received_size) if received_size else b'\x10'
         return {"x": x, "y": y, "time": time_ms() - _request_time_ms, "data": received}
 

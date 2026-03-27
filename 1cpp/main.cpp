@@ -413,8 +413,9 @@ bool server() {
                 cords, createCombinedArrayWithMemcpy(output_size, output_buffer)
             );
         } else {
-            auto temp = createCombinedArrayWithMemcpy(cords,
-                createCombinedArrayWithMemcpy(0, std::vector<uint8_t>{0})
+            std::cout << "Sent array of";
+            auto temp = createCombinedArrayWithMemcpy(
+                cords, createCombinedArrayWithMemcpy(0, std::vector<uint8_t>{0})
             );
             std::vector<uint8_t> data(temp.begin(), temp.begin() + std::min<size_t>(8, temp.size()));
         }
