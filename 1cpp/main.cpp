@@ -385,7 +385,7 @@ bool server() {
         }
 
         // Координаты курсора
-        uint16_t root_x, root_y, win_x, win_y;
+        int root_x, root_y, win_x, win_y;
         Window root_return, child_return;
         unsigned int mask_return;
         XQueryPointer(
