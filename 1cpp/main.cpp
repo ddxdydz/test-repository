@@ -382,6 +382,18 @@ bool server() {
             cleanup_x11();
             exit(EXIT_FAILURE);
         }
+
+        // Координаты курсора
+        uint16_t root_x, root_y, win_x, win_y;
+        unsigned int mask_return;
+        Bool result = XQueryPointer(
+            display, root, &root_return, &child_return,
+            &root_x, &root_y,  // координаты относительно корневого окна
+            &win_x, &win_y,    // координаты относительно окна под курсором
+            &mask_return
+        );
+        std::cout << "X = " << root_x << ", Y = " << root_y << " ms\n";
+
         // Processing
         std::vector<uint8_t> monochrome_map(size, 0);
         int completed_count;
