@@ -32,10 +32,23 @@ python3 ~/test-repository/server_screen_sender.py
 EOF
 chmod +x ~/sscreen
 
+chmod +x ~/test-repository/1cpp/mcompile.sh
+~/test-repository/1cpp/mcompile.sh
+cat > ~/s2screen << 'EOF'
+~/test-repository/1cpp/main.exe
+EOF
+chmod +x ~/sscreen
+
 cat > ~/scommand << 'EOF'
 python3 ~/test-repository/server_command_receiver.py
 EOF
 chmod +x ~/scommand
+
+cat > ~/start << 'EOF'
+~/test-repository/1cpp/main.exe &
+python3 ~/test-repository/server_command_receiver.py
+EOF
+chmod +x ~/start
 
 
 # Для буфера обмена
