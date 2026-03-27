@@ -362,7 +362,7 @@ bool server() {
         // Ждём запрос от клиента (простой приём одного байта как сигнала)
         char request;
         uint8_t bytes_received = recv(client_fd, &request, 1, 0);
-        std::cout << "bytes_received = " << bytes_received << "\n";
+        std::cout << "bytes_received = " << request << "\n";
 
         if (bytes_received <= 0) {
             // Клиент отключился или ошибка
