@@ -197,7 +197,7 @@ CImg<unsigned char> monochrome_to_cimg(const std::vector<uint8_t>& monochrome_ma
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             size_t index = static_cast<size_t>(y * width + x);
-            unsigned char pixel_value = (monochrome_map[index] == 0) ? 0 : 255;
+            unsigned char pixel_value = monochrome_map[index];
             cimg(x, y, 0, 0) = pixel_value;
         }
     }
