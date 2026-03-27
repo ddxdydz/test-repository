@@ -16,8 +16,6 @@ XWindowAttributes root_attributes;
 int width;
 int height;
 int size;
-int depth;
-const int C = 2;
 
 static uint8_t gray_lut[256 * 256 * 256];
 void initGrayLUT() {
@@ -25,32 +23,6 @@ void initGrayLUT() {
         for (int g = 0; g < 256; g++) {
             for (int b = 0; b < 256; b++) {
                 gray_lut[(r << 16) | (g << 8) | b] = (r * 77 + g * 150 + b * 29) >> 13;
-            }
-        }
-    }
-}
-
-static uint8_t bin_lut[8][8][8][8][8][8][8][8][8];
-void initBinLUT() {
-    for (int a1 = 0; a1 < 8; a1++) {
-        for (int a2 = 0; a2 < 8; a2++) {
-            for (int a3 = 0; a3 < 8; a3++) {
-                for (int a4 = 0; a4 < 8; a4++) {
-                    for (int a5 = 0; a5 < 8; a5++) {
-                        for (int a6 = 0; a6 < 8; a6++) {
-                            for (int a7 = 0; a7 < 8; a7++) {
-                                for (int a8 = 0; a8 < 8; a8++) {
-                                    for (int a9 = 0; a9 < 8; a9++) {
-                                        bin_lut[a1][a2][a3][a4][a5][a6][a7][a8][a9] = 0;
-                                        if (a5 * 9 > a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + C) {
-                                            bin_lut[a1][a2][a3][a4][a5][a6][a7][a8][a9] = 1;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
     }
@@ -76,11 +48,9 @@ bool init_x11() {
 
     width = root_attributes.width;
     height = root_attributes.height;
-    depth = root_attributes.depth;
     size = width * height;
 
     initGrayLUT();
-    initBinLUT();
 
     return true;
 }
@@ -95,8 +65,7 @@ void cleanup_x11() {
 
 // Захват экрана и возврат XImage
 XImage* capture_screen_image() {
-    XImage* image = nullptr;
-    image = XGetImage(
+    XImage* image = XGetImage(
         display,
         root_window,
         0, 0,
@@ -117,7 +86,8 @@ void getMonochromeMap(
     std::vector<uint8_t>& reference_map,
     int& completed_count,
     int& differenced_count,
-    int size_score_th
+    int size_score_th,
+    int threshold
 ) {
     const uint32_t* src = reinterpret_cast<const uint32_t*>(x_image->data);
     completed_count = 0;
@@ -132,7 +102,7 @@ void getMonochromeMap(
         uint8_t* reference_row = reference_map.data() + y * width;
 
         for (int x = 1; x < width - 1; ++x) {
-            uint8_t px = gray_lut[curr_row[x] >> 8];
+            uint8_t px = threshold > gray_lut[curr_row[x] >> 8];
             completed_count += 1;
 
             if (reference_row[x] != px) {
@@ -197,7 +167,7 @@ CImg<unsigned char> monochrome_to_cimg(const std::vector<uint8_t>& monochrome_ma
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             size_t index = static_cast<size_t>(y * width + x);
-            unsigned char pixel_value = monochrome_map[index];
+            unsigned char pixel_value = (monochrome_map[index] == 0) ? 0 : 255;
             cimg(x, y, 0, 0) = pixel_value;
         }
     }
@@ -232,7 +202,7 @@ int main() {
     std::vector<uint8_t> monochrome_map(size, 0);
     int completed_count;
     int differenced_count;
-    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000);
+    getMonochromeMap(x_image, monochrome_map, reference_map, completed_count, differenced_count, 20000, 100);
     XDestroyImage(x_image);
     cleanup_x11();
     
