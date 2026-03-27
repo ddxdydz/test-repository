@@ -107,10 +107,13 @@ if __name__ == "__main__":
             x, y, _net_time_ms, size, recv_data = data.values()
             blit_number += 1
             _dec_time_ms = time_ms()
-            dec_data = bz2.decompress(recv_data)
-            _conv_time_ms = time_ms()
-            diff_data = np.frombuffer(dec_data, dtype=np.uint8)
-            reference_data = np.bitwise_xor(reference_data, diff_data)
+            if size > 6:
+                dec_data = bz2.decompress(recv_data)
+                _conv_time_ms = time_ms()
+                diff_data = np.frombuffer(dec_data, dtype=np.uint8)
+                reference_data = np.bitwise_xor(reference_data, diff_data)
+            else:
+                _conv_time_ms = _dec_time_ms
             gray_data = reference_data.copy() * 255
             rgb_data = np.stack([gray_data, gray_data, gray_data], axis=-1)  # shape: (height*width, 3)
             screen_to_blit = pygame.image.fromstring(rgb_data.tobytes(), SCREEN_SIZE, 'RGB')

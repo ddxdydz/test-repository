@@ -414,7 +414,7 @@ bool server() {
             );
         } else {
             data = createCombinedArrayWithMemcpy(
-                cords, createCombinedArrayWithMemcpy(0, [0])
+                cords, createCombinedArrayWithMemcpy(0, std::vector<uint8_t>(1, 0))
             );
         }
         int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
