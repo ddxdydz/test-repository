@@ -28,7 +28,7 @@ class ScreenReceiverClient:
         self._socket_transceiver.set_timeout(self.SOCKET_TIMEOUT)
 
     def connect(self):
-        self._socket_transceiver.connect((self._server_host, self._server_port)
+        self._socket_transceiver.connect((self._server_host, self._server_port))
 
     def recv_screen(self):
         _request_time_ms = time_ms()
@@ -36,8 +36,8 @@ class ScreenReceiverClient:
         x = int.from_bytes(self._socket_transceiver.recv_raw(2), 'big', signed=False)
         y = int.from_bytes(self._socket_transceiver.recv_raw(2), 'big', signed=False)
         received_size = int.from_bytes(self._socket_transceiver.recv_raw(4), 'big', signed=False)
-        received = self._socket_transceiver.recv_raw(received_size) if received_size else 0
-        return {"x": x, "y": y, "time": time_ms() - _request_time_ms, "size": received_size + 6, "data": received}
+        received = self._socket_transceiver.recv_raw(received_size) if received_size else b'\x10'
+        return {"x": x, "y": y, "time": time_ms() - _request_time_ms, "data": received}
 
     def close(self):
         self._socket_transceiver.close()
@@ -104,10 +104,10 @@ if __name__ == "__main__":
                 data = blit_data_queue[-1]
                 blit_data_queue.clear()
         if data is not None:
-            x, y, _net_time_ms, size, recv_data = data.values()
+            x, y, _net_time_ms, recv_data = data.values()
             blit_number += 1
             _dec_time_ms = time_ms()
-            if size > 6:
+            if len(recv_data) > 1:
                 dec_data = bz2.decompress(recv_data)
                 _conv_time_ms = time_ms()
                 diff_data = np.frombuffer(dec_data, dtype=np.uint8)
@@ -119,11 +119,11 @@ if __name__ == "__main__":
             screen_to_blit = pygame.image.fromstring(rgb_data.tobytes(), SCREEN_SIZE, 'RGB')
             _blit_time_ms = time_ms()
             screen.blit(screen_to_blit, (0, 0))
-            pygame.draw.circle(screen, (255, 0, 0), (x, y), 5)
+            pygame.draw.circle(screen, (0, 0, 255), (x, y), 5)
             pygame.draw.circle(screen, (255, 255, 255), (x, y), 2)
 
             caption_info_list = [
-                f"{blit_number} = {size} B",
+                f"{blit_number} = {2 + 2 + 4 + len(recv_data)} B",
                 f"FPS: {int(clock.get_fps())}",
                 f"net_time: {str(_dec_time_ms - _net_time_ms).rjust(4, '0')} ms",
                 f"dec_time: {str(_conv_time_ms - _dec_time_ms).rjust(4, '0')} ms",
