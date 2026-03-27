@@ -33,12 +33,11 @@ class ScreenReceiverClient:
     def recv_screen(self):
         _request_time_ms = time_ms()
         self._socket_transceiver.send_raw(threshold.to_bytes(1, 'big', signed=False))
-        x = int.from_bytes(self._socket_transceiver.recv_raw(2), 'big', signed=False)
-        y = int.from_bytes(self._socket_transceiver.recv_raw(2), 'big', signed=False)
+        cx = int.from_bytes(self._socket_transceiver.recv_raw(2), 'big', signed=False)
+        cy = int.from_bytes(self._socket_transceiver.recv_raw(2), 'big', signed=False)
         received_size = int.from_bytes(self._socket_transceiver.recv_raw(4), 'big', signed=False)
-        print(received_size)
-        received = self._socket_transceiver.recv_raw(received_size) if received_size else b'\x10'
-        return {"x": x, "y": y, "time": time_ms() - _request_time_ms, "data": received}
+        received = self._socket_transceiver.recv_raw(received_size) if received_size else b''
+        return {"x": cx, "y": cy, "time": time_ms() - _request_time_ms, "data": received}
 
     def close(self):
         self._socket_transceiver.close()
@@ -80,15 +79,17 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
     running = True
     is_inactive = True
-    blit_number = 0
+    update_number = 0
+    _update_time = time_ms()
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.KEYDOWN and is_inactive:
-                if event.key == pygame.K_ESCAPE:
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE and is_inactive:
                     running = False
+                print(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and is_inactive:
                     print(*pyautogui.position(), *pygame.mouse.get_pos(), sep=", ")
@@ -106,7 +107,8 @@ if __name__ == "__main__":
                 blit_data_queue.clear()
         if data is not None:
             x, y, _net_time_ms, recv_data = data.values()
-            blit_number += 1
+            update_number += 1
+
             _dec_time_ms = time_ms()
             if len(recv_data) > 1:
                 dec_data = bz2.decompress(recv_data)
@@ -118,20 +120,26 @@ if __name__ == "__main__":
             gray_data = reference_data.copy() * 255
             rgb_data = np.stack([gray_data, gray_data, gray_data], axis=-1)  # shape: (height*width, 3)
             screen_to_blit = pygame.image.fromstring(rgb_data.tobytes(), SCREEN_SIZE, 'RGB')
+
             _blit_time_ms = time_ms()
             screen.blit(screen_to_blit, (0, 0))
             pygame.draw.circle(screen, (0, 0, 255), (x, y), 5)
             pygame.draw.circle(screen, (255, 255, 255), (x, y), 2)
 
             caption_info_list = [
-                f"{blit_number} = {2 + 2 + 4 + len(recv_data)} B",
+                f"{update_number} = {2 + 2 + 4 + len(recv_data)} B",
                 f"FPS: {int(clock.get_fps())}",
-                f"net_time: {str(_dec_time_ms - _net_time_ms).rjust(4, '0')} ms",
+                f"update_time: {str(time_ms() - _update_time).rjust(4, '0')} ms",
+                f"net_time: {str(_net_time_ms).rjust(4, '0')} ms",
                 f"dec_time: {str(_conv_time_ms - _dec_time_ms).rjust(4, '0')} ms",
                 f"conv_time: {str(_blit_time_ms - _conv_time_ms).rjust(4, '0')} ms",
                 f"blit_time: {str(time_ms() - _blit_time_ms).rjust(4, '0')} ms",
             ]
+
             pygame.display.set_caption("   ".join(caption_info_list))
+
+            _update_time = time_ms()
+
         pygame.display.flip()
         clock.tick(15)
 

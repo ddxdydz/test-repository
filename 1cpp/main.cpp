@@ -362,7 +362,7 @@ bool server() {
         // Ждём запрос от клиента (простой приём одного байта как сигнала)
         uint8_t request;
         uint8_t bytes_received = recv(client_fd, &request, 1, 0);
-        std::cout << "bytes_received = " << request << "\n";
+        std::cout << "bytes_received = " << static_cast<int>(request) << "\n";
 
         if (bytes_received <= 0) {
             // Клиент отключился или ошибка
@@ -413,7 +413,6 @@ bool server() {
                 cords, createCombinedArrayWithMemcpy(output_size, output_buffer)
             );
         } else {
-            std::cout << "debug S423324";
             data = {
                 (uint8_t)((cords >> 24) & 0xFF),
                 (uint8_t)((cords >> 16) & 0xFF),
