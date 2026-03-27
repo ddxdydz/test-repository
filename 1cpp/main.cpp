@@ -162,7 +162,7 @@ void compressWithBzip2(
 }
 
 // Функция для надёжной отправки данных (гарантирует отправку всех байтов)
-ssize_t reliable_send(int sockfd, const void* buf, size_t len) {
+size_t reliable_send(int sockfd, const void* buf, size_t len) {
     const uint8_t* ptr = static_cast<const uint8_t*>(buf);
     size_t total_sent = 0;
 
@@ -178,6 +178,7 @@ ssize_t reliable_send(int sockfd, const void* buf, size_t len) {
             return 0;
         }
         total_sent += sent;
+        std::cout << total_sent << "/" << len << " B" << "\n";
     }
     return total_sent;
 }
