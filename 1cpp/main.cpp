@@ -391,15 +391,13 @@ bool server() {
         compressWithBzip2(monochrome_map, output_buffer, output_size);
         std::vector<uint8_t> data = createCombinedArrayWithMemcpy(output_size, output_buffer);
         int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
-        std::cout << output_size << " B" << "\n";
-        std::cout << proc_time << " ms" << "\n";
 
         // Отправляем заголовок (4 байта с длиной массива)
         if (reliable_send(client_fd, data.data(), data.size()) <= 0) {
             break;
         }
 
-        std::cout << "Sent array of " << data_size << " bytes\n";
+        std::cout << "Sent array of " << data.size() << " bytes in " << proc_time << " ms\n";
     }
 
     // Закрываем соединения
