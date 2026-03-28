@@ -111,7 +111,7 @@ void getMonochromeMap(
         uint8_t* reference_row = reference_map.data() + y * width;
 
         for (int x = 1; x < width - 1; ++x) {
-            uint8_t px = (threshold > gray_lut[curr_row[x] >> 8]) ? 1 : 0;
+            uint8_t px = (gray_lut[curr_row[x] >> 8] > threshold) ? 1 : 0;
             completed_count += 1;
 
             if (reference_row[x] != px) {
@@ -382,7 +382,7 @@ bool server() {
 
         // Генерируем массив
         // Capture
-        clock_t start = clock();
+        // clock_t start = clock();
         XImage* x_image = capture_screen_image();
         if (!x_image) {
             perror("capture_screen_image failed");
@@ -430,7 +430,7 @@ bool server() {
                 0, 0, 0, 0
             };
         }
-        int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
+        // int proc_time = (clock() - start) * 1000 / CLOCKS_PER_SEC; // в мс
 
         // Отправляем заголовок (4 байта с длиной массива)
         if (reliable_send(client_fd, data.data(), data.size()) <= 0) {
